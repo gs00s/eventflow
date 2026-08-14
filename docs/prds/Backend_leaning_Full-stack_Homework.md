@@ -20,9 +20,9 @@ Initialize the system using the provided AWS meetup sample data, and make sure i
 
   - Define a schema to store and render flexible event page layouts composed of these building blocks:
 
-    - Section *(flex container)*
+    - Section _(flex container)_
 
-    - Heading *(h1, h2, etc.)*
+    - Heading _(h1, h2, etc.)_
 
     - Paragraph
 
@@ -46,7 +46,7 @@ Initialize the system using the provided AWS meetup sample data, and make sure i
 
     - Listing events
 
-    - *(Optional)* Event editing - only editable by organizer account
+    - _(Optional)_ Event editing - only editable by organizer account
 
 - **Frontend**
 

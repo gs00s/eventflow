@@ -1,0 +1,10 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+minimumReleaseAge: 1440 # 1 day
+blockExoticSubdeps: true
+allowBuilds:
+  '@swc/core': true
+
+# Native build scripts are blocked by default; approve per-package via `pnpm approve-builds`
