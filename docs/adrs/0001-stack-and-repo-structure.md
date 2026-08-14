@@ -1,10 +1,12 @@
 # ADR 0001: Stack and Repo Structure
 
 ## Status
+
 Accepted
 
 ## Context
-EventFlow (Snapsoft take-home) requires a backend serving flexible, template-driven event pages (recursive layout components) to multiple frontends, with username/password auth and VIP-gated events. Goal: showcase backend-leaning best practices in the submission.
+
+EventFlow requires a backend serving flexible, template-driven event pages (recursive layout components) to multiple frontends, with username/password auth and VIP-gated events. Goal: showcase backend-leaning best practices in the deliverable.
 
 ## Decision
 
@@ -16,15 +18,17 @@ EventFlow (Snapsoft take-home) requires a backend serving flexible, template-dri
 
 **Auth**: Hand-rolled on Passport (`passport-local` + `passport-jwt`) + `@nestjs/jwt` + `argon2`. Idiomatic Nest pattern, stateless JWT (role/sub trusted from payload — no revocation without re-issuing/blocklist). Building auth is part of what's graded, so no auth-as-a-service library.
 
-**Frontend**: Vite + React + TS — thin, matches the "basic UI" scope (single event-listing page). Styling via **Tailwind CSS + shadcn/ui** (Radix-based, accessible, no custom design-system work needed at this scope). **TanStack Query** for server state/data fetching (`GET /events`, `GET /events/:id`, `POST /auth/login`), typed against `packages/shared-types` — the app has real mutations (login, registration, optional org-edit), not just reads, and Query's mutation support is more fleshed-out than the alternatives. **TanStack Router** for routing (home/event-detail/login) — fully type-safe route params, same vendor/philosophy as Query. **Zustand** for the small slice of client state (auth token, VIP flag) shared between the login form and event views — pairs with TanStack Query as the current standard split of server vs. client state, far less boilerplate than Redux at this scope.
+**Frontend**: Vite + React + TS — thin, matches the "basic UI" scope (single event-listing page). Styling via **Tailwind CSS + shadcn/ui** (Base UI primitives — shadcn's current default, accessible, no custom design-system work needed at this scope). **TanStack Query** for server state/data fetching (`GET /events`, `GET /events/:id`, `POST /auth/login`), typed against `packages/shared-types` — the app has real mutations (login, registration, optional org-edit), not just reads, and Query's mutation support is more fleshed-out than the alternatives. **TanStack Router** for routing (home/event-detail/login) — fully type-safe route params, same vendor/philosophy as Query. **Zustand** for the small slice of client state (auth token, VIP flag) shared between the login form and event views — pairs with TanStack Query as the current standard split of server vs. client state, far less boilerplate than Redux at this scope.
 
 **Repo structure**: Monorepo, pnpm workspaces + Turborepo.
+
 ```
 apps/api/src/{users (auth+users), events (events+layouts+registrations), speakers, db}
 apps/web/
 packages/shared-types/   # DTOs shared between api and web
 docker-compose.yml       # local Postgres
 ```
+
 Backend stays framework-agnostic toward its consumers (PRD: "serve multiple frontends"), `shared-types` keeps `apps/web` honest against the API's actual contract.
 
 **Module boundaries**: `users` (auth+users, one table, tightly coupled). `events` (events+layouts+registrations, one aggregate — everything an event owns). `speakers` standalone.
@@ -34,6 +38,7 @@ Backend stays framework-agnostic toward its consumers (PRD: "serve multiple fron
 **Lint/format**: oxlint + tsgolint (type-aware rules, incl. `no-floating-promises` — matters in an async-heavy Nest+Drizzle codebase) + Oxfmt. ~10x faster than ESLint+typescript-eslint at near-parity rule coverage.
 
 **CI/CD**: GitHub Actions only, no deploy (out of scope for now).
+
 - `pull_request`: lint → typecheck → test (`vitest run --coverage`) → build — required checks.
 - `push` to `main`: build only (post-merge sanity check).
 
