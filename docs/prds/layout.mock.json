@@ -1,0 +1,104 @@
+{
+  "id": "3b16bad7-a9fe-4e3e-b8ba-fbadfb63461f",
+  "components": [
+    {
+      "id": "2d216477-3915-4ff4-bcd2-b83b6643a0e1",
+      "type": "Section",
+      "data": {
+        "direction": "col"
+      },
+      "components": [
+        {
+          "id": "3eb01bf8-de02-49bf-9d76-7ff11212290c",
+          "type": "Heading",
+          "data": {
+            "text": "About the Summit",
+            "level": "h2"
+          },
+          "components": []
+        },
+        {
+          "id": "4498c31f-f360-4cf7-b4a7-0743bca40793",
+          "type": "Paragraph",
+          "data": {
+            "text": "The AWS Cloud Innovators Summit is a premier event..."
+          },
+          "components": []
+        },
+        {
+          "id": "907b5006-0d92-4651-93f5-8efa094880e0",
+          "type": "Section",
+          "data": {
+            "direction": "col"
+          },
+          "components": [
+            {
+              "id": "a5b4444b-8a49-4f90-beda-cc1bab738ed0",
+              "type": "Heading",
+              "data": {
+                "text": "What to expect?",
+                "level": "h3"
+              },
+              "components": []
+            },
+            {
+              "id": "2b8c6f32-68b5-4907-a7fe-ecae98aba9d6",
+              "type": "Paragraph",
+              "data": {
+                "text": "- A mix of general and technical talks and discussions.\n- Networking opportunities and connecting with other community members and projects.\n- Drinks, pizza, cake and snacks 🍕 🍺 🍷"
+              },
+              "components": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "99d980f7-f3f7-4420-9585-6cfde349acb2",
+      "type": "SpeakerList",
+      "data": {
+        "title": "Featured Speakers"
+      },
+      "components": [
+        {
+          "id": "de0f7ab4-72ea-4f21-9bdf-b0769dca7c6f",
+          "type": "SpeakerCard",
+          "data": {
+            "name": "Dr. Jane Doe",
+            "title": "VP of Engineering",
+            "image": "..."
+          },
+          "components": []
+        }
+      ]
+    },
+    {
+      "id": "e663dc38-204b-4792-afa0-bb8e22000c81",
+      "type": "SessionSchedule",
+      "data": {
+        "title": "Session Schedule"
+      },
+      "components": [
+        {
+          "id": "6ed62255-c4fb-4496-9b42-fdbdce851d6a",
+          "type": "SessionCard",
+          "data": {
+            "title": "Building Serverless Applications",
+            "subtitle": "What is serverless?",
+            "description": "How to do it with AWS",
+            "from": "2025-10-26T10:00:00.000Z",
+            "to": "2025-10-26T11:00:00.000Z",
+            "room": "Ballroom A",
+            "speaker": {
+              "id": "dfed351e-0953-4d31-9856-1f56bcbfe939",
+              "name": "Dr. Jane Doe",
+              "title": "VP of Engineering, Example Corp",
+              "image": "..."
+            }
+          },
+          "components": []
+        }
+      ]
+    }
+  ]
+}
