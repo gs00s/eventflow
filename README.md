@@ -17,6 +17,16 @@ Requirements are in [`docs/prds/`](docs/prds/). Architecture and stack rationale
 pnpm install
 ```
 
+### Database
+
+```sh
+docker compose up -d          # local Postgres (postgres:18-alpine)
+cp apps/api/.env.example apps/api/.env
+cd apps/api
+pnpm db:migrate               # create tables
+pnpm db:seed                  # seed from docs/prds/speakers.mock.json
+```
+
 ### Run
 
 ```sh
@@ -38,18 +48,22 @@ curl http://localhost:3000/speakers
 
 Run from the repo root, orchestrated across both apps via Turborepo:
 
-| Command          | Does                                        |
-| ---------------- | ------------------------------------------- |
-| `pnpm build`     | Build both apps                             |
-| `pnpm lint`      | `oxlint` (+ type-aware rules on `apps/api`) |
-| `pnpm typecheck` | `tsc` across all packages                   |
-| `pnpm test`      | `vitest run` across all packages            |
-| `pnpm fmt`       | Format the repo with Oxfmt                  |
-| `pnpm fmt:check` | Check formatting without writing            |
+| Command                 | Does                                                  |
+| ----------------------- | ----------------------------------------------------- |
+| `pnpm build`            | Build both apps                                       |
+| `pnpm lint`             | `oxlint` (+ type-aware rules on `apps/api`)           |
+| `pnpm typecheck`        | `tsc` across all packages                             |
+| `pnpm test:unit`        | `vitest run` — no database required                   |
+| `pnpm test:integration` | `vitest run` against real Postgres via Testcontainers |
+| `pnpm fmt`              | Format the repo with Oxfmt                            |
+| `pnpm fmt:check`        | Check formatting without writing                      |
+
+`apps/api`-only: `pnpm db:generate` (new migration from schema changes), `pnpm db:migrate`, `pnpm db:seed`.
 
 ### Current state
 
-- No database yet — `GET /speakers` returns a hardcoded response from `apps/api/src/speakers`. Postgres/Drizzle setup is a separate, later step.
+- `GET /speakers` reads from Postgres via Drizzle (`apps/api/src/db`). `apps/api/.env` needs `DATABASE_URL` — see `.env.example`.
+- Integration tests spin up their own ephemeral Postgres via Testcontainers (`@testcontainers/postgresql`) — independent of the `docker-compose` instance used for interactive `pnpm dev`.
 - `apps/web` has a home page, a top nav, and a `/speakers` page listing names fetched live from the API.
 
 ## Technology decisions
@@ -75,13 +89,14 @@ Run from the repo root, orchestrated across both apps via Turborepo:
 
 ### Repo & tooling
 
-| Choice                                                                                                                                                      | Why                                                                                                                        | Docs                                                                                                                            |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| [pnpm](https://pnpm.io/) workspaces + [Turborepo](https://turborepo.dev/docs)                                                                               | Monorepo (`apps/api`, `apps/web`, `packages/shared-types`) with strict dependency resolution and task orchestration        | [pnpm workspaces](https://pnpm.io/workspaces) · [Turborepo](https://turborepo.dev/docs)                                         |
-| [Vitest](https://vitest.dev/) + [unplugin-swc](https://github.com/unplugin/unplugin-swc)                                                                    | One test runner for both apps; `unplugin-swc` fixes Nest's decorator-metadata DI resolution under Vite's esbuild transform | [Vitest guide](https://vitest.dev/guide/)                                                                                       |
-| [oxlint](https://oxc.rs/docs/guide/usage/linter) + [tsgolint](https://github.com/oxc-project/tsgolint) + [Oxfmt](https://oxc.rs/docs/guide/usage/formatter) | Type-aware linting (incl. `no-floating-promises`) at ~10x ESLint's speed, single Rust toolchain for lint + format          | [Oxlint](https://oxc.rs/docs/guide/usage/linter) · [Type-aware linting](https://oxc.rs/docs/guide/usage/linter/type-aware.html) |
-| [GitHub Actions](https://docs.github.com/en/actions)                                                                                                        | `typecheck`/`lint`/`fmt:check`/`test` on pull requests; no build/deploy step or `main`-branch job yet                      | [GitHub Actions docs](https://docs.github.com/en/actions)                                                                       |
-| [Docker Compose](https://docs.docker.com/compose/)                                                                                                          | Local Postgres for `docker-compose up` + `pnpm dev`                                                                        | [Compose docs](https://docs.docker.com/compose/)                                                                                |
+| Choice                                                                                                                                                      | Why                                                                                                                                            | Docs                                                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| [pnpm](https://pnpm.io/) workspaces + [Turborepo](https://turborepo.dev/docs)                                                                               | Monorepo (`apps/api`, `apps/web`, `packages/shared-types`) with strict dependency resolution and task orchestration                            | [pnpm workspaces](https://pnpm.io/workspaces) · [Turborepo](https://turborepo.dev/docs)                                         |
+| [Vitest](https://vitest.dev/) + [unplugin-swc](https://github.com/unplugin/unplugin-swc)                                                                    | One test runner for both apps; `unplugin-swc` fixes Nest's decorator-metadata DI resolution under Vite's esbuild transform                     | [Vitest guide](https://vitest.dev/guide/)                                                                                       |
+| [oxlint](https://oxc.rs/docs/guide/usage/linter) + [tsgolint](https://github.com/oxc-project/tsgolint) + [Oxfmt](https://oxc.rs/docs/guide/usage/formatter) | Type-aware linting (incl. `no-floating-promises`) at ~10x ESLint's speed, single Rust toolchain for lint + format                              | [Oxlint](https://oxc.rs/docs/guide/usage/linter) · [Type-aware linting](https://oxc.rs/docs/guide/usage/linter/type-aware.html) |
+| [Testcontainers](https://testcontainers.com/) (`@testcontainers/postgresql`)                                                                                | Ephemeral Postgres spun up once per test run (Vitest `globalSetup`) — same code path locally and in CI, no docker-compose dependency for tests | [Node.js guide](https://testcontainers.com/guides/getting-started-with-testcontainers-for-nodejs/)                              |
+| [GitHub Actions](https://docs.github.com/en/actions)                                                                                                        | `typecheck`/`lint`/`fmt:check`/`test:unit`/`test:integration` on pull requests; no build/deploy step or `main`-branch job yet                  | [GitHub Actions docs](https://docs.github.com/en/actions)                                                                       |
+| [Docker Compose](https://docs.docker.com/compose/)                                                                                                          | Local Postgres for interactive `pnpm dev` (not used by tests)                                                                                  | [Compose docs](https://docs.docker.com/compose/)                                                                                |
 
 ## Key decisions & trade-offs
 

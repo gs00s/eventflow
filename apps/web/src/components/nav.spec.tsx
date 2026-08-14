@@ -22,8 +22,7 @@ function createTestRouter() {
 describe('Nav', () => {
   it('renders links to Home and Speakers, highlighting the active one', async () => {
     render(<RouterProvider router={createTestRouter()} />);
-
-    expect(await screen.findByText('EventFlow')).toBeTruthy();
+    await screen.findByText('EventFlow');
 
     const home = screen.getByRole('link', { name: 'Home' });
     const speakers = screen.getByRole('link', { name: 'Speakers' });

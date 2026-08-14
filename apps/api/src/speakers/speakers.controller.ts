@@ -7,7 +7,7 @@ export class SpeakersController {
   constructor(private readonly speakersService: SpeakersService) {}
 
   @Get()
-  findAll(): Speaker[] {
+  findAll(): Promise<Speaker[]> {
     return this.speakersService.findAll();
   }
 }

@@ -1,19 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import type { Speaker } from '@eventflow/shared-types';
-
-const SPEAKERS: Speaker[] = [
-  {
-    id: 'dfed351e-0953-4d31-9856-1f56bcbfe939',
-    name: 'Dr. Jane Doe',
-    title: 'VP of Engineering, Example Corp',
-    bio: 'Expert in serverless architectures and cloud-native development.',
-    image: '...',
-  },
-];
+import { SpeakersRepository } from './speakers.repository';
 
 @Injectable()
 export class SpeakersService {
-  findAll(): Speaker[] {
-    return SPEAKERS;
+  constructor(private readonly speakersRepository: SpeakersRepository) {}
+
+  async findAll(): Promise<Speaker[]> {
+    const rows = await this.speakersRepository.findAll();
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      title: row.title,
+      bio: row.bio,
+      image: row.image,
+    }));
   }
 }
