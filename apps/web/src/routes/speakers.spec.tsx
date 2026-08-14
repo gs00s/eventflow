@@ -19,6 +19,8 @@ describe('Speakers', () => {
   it('renders the fetched speaker names', async () => {
     renderWithQueryClient(<Speakers />);
 
-    expect(await screen.findByText('Dr. Jane Doe')).toBeTruthy();
+    const name = await screen.findByText('Dr. Jane Doe');
+
+    expect(name).toBeTruthy();
   });
 });

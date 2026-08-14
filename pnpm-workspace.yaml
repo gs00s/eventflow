@@ -6,5 +6,9 @@ minimumReleaseAge: 1440 # 1 day
 blockExoticSubdeps: true
 allowBuilds:
   '@swc/core': true
+  cpu-features: true
+  esbuild: true
+  protobufjs: true
+  ssh2: true
 
 # Native build scripts are blocked by default; approve per-package via `pnpm approve-builds`

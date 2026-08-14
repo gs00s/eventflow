@@ -26,14 +26,16 @@ EventFlow requires a backend serving flexible, template-driven event pages (recu
 apps/api/src/{users (auth+users), events (events+layouts+registrations), speakers, db}
 apps/web/
 packages/shared-types/   # DTOs shared between api and web
-docker-compose.yml       # local Postgres
+docker-compose.yml       # local Postgres for interactive dev (pnpm dev)
 ```
 
 Backend stays framework-agnostic toward its consumers (PRD: "serve multiple frontends"), `shared-types` keeps `apps/web` honest against the API's actual contract.
 
 **Module boundaries**: `users` (auth+users, one table, tightly coupled). `events` (events+layouts+registrations, one aggregate — everything an event owns). `speakers` standalone.
 
-**Testing**: Vitest everywhere (`unplugin-swc` wired into `apps/api` to fix Nest's `emitDecoratorMetadata`-dependent DI under esbuild). Unit tests (services/guards, Drizzle mocked) + integration tests (`test/integration`, real Postgres via docker-compose) for signup→login→VIP-access and registration flows.
+**Backend layering**: `Controller → Service → Repository → DbService` within each resource module. Repository is the only layer touching Drizzle; Service owns DTO transformation and never returns raw DB rows from an endpoint, even where the mapping is currently 1:1; Controller stays thin.
+
+**Testing**: Vitest everywhere (`unplugin-swc` wired into `apps/api` to fix Nest's `emitDecoratorMetadata`-dependent DI under esbuild), specs co-located with the code they test. Repositories are integration-tested only (`test:integration`, `*.integration.spec.ts`, real Postgres via **Testcontainers** — same code path locally and in CI, no docker-compose dependency for tests) — mocking Drizzle's fluent builder to unit-test a passthrough just asserts "the mock returns what it's told." Services and controllers are unit-tested (`test:unit`, no database) by mocking the layer directly below them (flat interface, e.g. `{ findAll: vi.fn() }`), and one integration test per resource covers the happy path end-to-end.
 
 **Lint/format**: oxlint + tsgolint (type-aware rules, incl. `no-floating-promises` — matters in an async-heavy Nest+Drizzle codebase) + Oxfmt. ~10x faster than ESLint+typescript-eslint at near-parity rule coverage.
 
@@ -61,3 +63,4 @@ Backend stays framework-agnostic toward its consumers (PRD: "serve multiple fron
 - **SWR** — lighter than TanStack Query, but its mutation support is thinner; this app has real mutations (login/register/edit), not just reads.
 - **Plain `fetch` + `useEffect`/`useState`** — zero dependencies, but every component hand-rolls loading/error/race-condition handling — the pattern React's own docs now steer away from.
 - **React Router** — larger ecosystem/more familiar, but TanStack Router's type-safe route params are a concrete win given TanStack Query is already in the stack.
+- **GitHub Actions `services:` container for Postgres in CI** — works, but is CI-provider-specific config that duplicates `docker-compose.yml` and can drift from it; Testcontainers gives one code path for local and CI instead.
