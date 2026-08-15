@@ -7,24 +7,23 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field
 import { Input } from '@/components/ui/input';
 import { authClient } from '@/lib/auth-client';
 
-const registerSchema = z.object({
-  name: z.string().min(1, 'Name is required.'),
+const loginSchema = z.object({
   email: z.string().email('Enter a valid email address.'),
-  password: z.string().min(8, 'Password must be at least 8 characters.'),
+  password: z.string().min(1, 'Password is required.'),
 });
 
-export function Register() {
+export function LoginPage() {
   const navigate = useNavigate();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useForm({
-    defaultValues: { name: '', email: '', password: '' },
-    validators: { onSubmit: registerSchema },
+    defaultValues: { email: '', password: '' },
+    validators: { onSubmit: loginSchema },
     onSubmit: async ({ value }) => {
       setSubmitError(null);
-      const { error } = await authClient.signUp.email(value);
+      const { error } = await authClient.signIn.email(value);
       if (error) {
-        setSubmitError(error.message ?? 'Could not create an account.');
+        setSubmitError(error.message ?? 'Invalid email or password.');
         return;
       }
       await navigate({ to: '/' });
@@ -33,7 +32,7 @@ export function Register() {
 
   return (
     <div className="mx-auto max-w-sm">
-      <h1 className="text-2xl font-semibold">Register</h1>
+      <h1 className="text-2xl font-semibold">Log in</h1>
       <form
         className="mt-6"
         onSubmit={(e) => {
@@ -42,26 +41,6 @@ export function Register() {
         }}
       >
         <FieldGroup>
-          <form.Field name="name">
-            {(field) => {
-              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Name</FieldLabel>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    aria-invalid={isInvalid}
-                  />
-                  <FieldError errors={field.state.meta.errors} />
-                </Field>
-              );
-            }}
-          </form.Field>
-
           <form.Field name="email">
             {(field) => {
               const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -109,7 +88,7 @@ export function Register() {
           <form.Subscribe selector={(state) => state.isSubmitting}>
             {(isSubmitting) => (
               <Button type="submit" disabled={isSubmitting}>
-                Register
+                Log in
               </Button>
             )}
           </form.Subscribe>

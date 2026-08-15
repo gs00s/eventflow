@@ -7,7 +7,7 @@ import { setupRouterTest } from '@/test/router-harness';
 
 const renderApp = setupRouterTest();
 
-describe('Events', () => {
+describe('EventsPage', () => {
   it('renders the fetched events, each linking to their detail page', async () => {
     server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
     const event = eventFactory.build();

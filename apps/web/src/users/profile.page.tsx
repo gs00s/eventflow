@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCurrentUser } from '@/lib/api';
 
-export function Profile() {
+export function ProfilePage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['currentUser'],
     queryFn: fetchCurrentUser,

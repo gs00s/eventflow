@@ -3,6 +3,7 @@ export * from './auth-relations';
 export * from './event-relations';
 export * from './event-sessions';
 export * from './events';
+export * from './layouts';
 export * from './session';
 export * from './speakers';
 export * from './user';

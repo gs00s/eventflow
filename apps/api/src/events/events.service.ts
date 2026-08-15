@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Event, EventDetail } from '@eventflow/shared-types';
+import { layoutSchema, type Event, type EventDetail } from '@eventflow/shared-types';
 import type { events } from '../db/schemas';
 import { EventsRepository } from './events.repository';
 
@@ -52,6 +52,10 @@ export class EventsService {
         bio: speaker.bio,
         image: speaker.image,
       })),
+      // Re-validated here, not just cast via drizzle's $type<>() at the schema
+      // level (a compile-time-only assertion) — jsonb has no DB-level shape
+      // enforcement, so this is the actual API-boundary gate on layout data.
+      layout: row.layout ? layoutSchema.parse(row.layout) : null,
     };
   }
 }

@@ -6,46 +6,46 @@ import {
   type RouterHistory,
 } from '@tanstack/react-router';
 import { authClient } from '@/lib/auth-client';
-import { RootLayout } from '@/routes/root';
-import { EventDetail } from '@/routes/event-detail';
-import { Events } from '@/routes/events';
-import { Home } from '@/routes/home';
-import { Login } from '@/routes/login';
-import { Profile } from '@/routes/profile';
-import { Register } from '@/routes/register';
-import { SpeakerDetail } from '@/routes/speaker-detail';
-import { Speakers } from '@/routes/speakers';
+import { RootLayout } from '@/components/root-layout';
+import { LoginPage } from '@/auth/login.page';
+import { RegisterPage } from '@/auth/register.page';
+import { EventDetailPage } from '@/events/event-detail.page';
+import { EventsPage } from '@/events/events.page';
+import { HomePage } from '@/home.page';
+import { SpeakerDetailPage } from '@/speakers/speaker-detail.page';
+import { SpeakersPage } from '@/speakers/speakers.page';
+import { ProfilePage } from '@/users/profile.page';
 
 const rootRoute = createRootRoute({ component: RootLayout });
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: Home,
+  component: HomePage,
 });
 
 const eventsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/events',
-  component: Events,
+  component: EventsPage,
 });
 
 const eventDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/events/$eventId',
-  component: EventDetail,
+  component: EventDetailPage,
 });
 
 const speakersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/speakers',
-  component: Speakers,
+  component: SpeakersPage,
 });
 
 const speakerDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/speakers/$speakerId',
-  component: SpeakerDetail,
+  component: SpeakerDetailPage,
 });
 
 const loginRoute = createRoute({
@@ -55,7 +55,7 @@ const loginRoute = createRoute({
     const { data } = await authClient.getSession();
     if (data?.user) throw redirect({ to: '/' });
   },
-  component: Login,
+  component: LoginPage,
 });
 
 const registerRoute = createRoute({
@@ -65,7 +65,7 @@ const registerRoute = createRoute({
     const { data } = await authClient.getSession();
     if (data?.user) throw redirect({ to: '/' });
   },
-  component: Register,
+  component: RegisterPage,
 });
 
 const profileRoute = createRoute({
@@ -75,7 +75,7 @@ const profileRoute = createRoute({
     const { data } = await authClient.getSession();
     if (!data?.user) throw redirect({ to: '/login' });
   },
-  component: Profile,
+  component: ProfilePage,
 });
 
 const routeTree = rootRoute.addChildren([

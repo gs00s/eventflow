@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
 import { fetchSpeakers } from '@/lib/api';
+import { SpeakerListItem } from './components/speaker-list-item';
 
-export function Speakers() {
+export function SpeakersPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['speakers'],
     queryFn: fetchSpeakers,
@@ -16,15 +16,7 @@ export function Speakers() {
       {data && (
         <ul className="mt-4 space-y-2">
           {data.map((speaker) => (
-            <li key={speaker.id}>
-              <Link
-                to="/speakers/$speakerId"
-                params={{ speakerId: speaker.id }}
-                className="underline"
-              >
-                {speaker.name}
-              </Link>
-            </li>
+            <SpeakerListItem key={speaker.id} speaker={speaker} />
           ))}
         </ul>
       )}

@@ -7,7 +7,7 @@ import { setupRouterTest } from '@/test/router-harness';
 
 const renderApp = setupRouterTest();
 
-describe('SpeakerDetail', () => {
+describe('SpeakerDetailPage', () => {
   it('renders the speaker with their linked events, each linking to the event detail page', async () => {
     server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
     const speaker = speakerFactory.build();
