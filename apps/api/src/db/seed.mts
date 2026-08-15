@@ -35,7 +35,7 @@ const eventMockSchema = z.object({
       room: z.string(),
     }),
   ),
-  layoutId: z.string(),
+  layoutId: z.string().nullable(),
 });
 
 async function seed() {
@@ -44,17 +44,19 @@ async function seed() {
   );
   const speakersData = speakerSchema.array().parse(speakersRaw);
 
-  const eventRaw = JSON.parse(readFileSync(resolve(__dirname, './seeds/event.mock.json'), 'utf8'));
-  const eventData = eventMockSchema.parse(eventRaw);
+  const eventsRaw = JSON.parse(
+    readFileSync(resolve(__dirname, './seeds/events.mock.json'), 'utf8'),
+  );
+  const eventsData = eventMockSchema.array().parse(eventsRaw);
 
   const layoutRaw = JSON.parse(
     readFileSync(resolve(__dirname, './seeds/layout.mock.json'), 'utf8'),
   );
   const layoutData = layoutSchema.parse(layoutRaw);
 
-  if (layoutData.id !== eventData.layoutId) {
+  if (!eventsData.some((event) => event.layoutId === layoutData.id)) {
     throw new Error(
-      "Seed data mismatch: event.mock.json's layoutId doesn't match layout.mock.json's id.",
+      "Seed data mismatch: no event in events.mock.json references layout.mock.json's id.",
     );
   }
 
@@ -69,45 +71,50 @@ async function seed() {
 
   await db
     .insert(events)
-    .values({
-      id: eventData.id,
-      title: eventData.title,
-      subtitle: eventData.subtitle,
-      description: eventData.description,
-      heroImage: eventData.hero.image,
-      heroCta: eventData.hero.cta,
-      date: eventData.date,
-      locationCity: eventData.location.city,
-      locationVenue: eventData.location.venue,
-      locationAddress: eventData.location.address,
-      organizerName: eventData.organizer.name,
-      organizerImage: eventData.organizer.img,
-      layoutId: eventData.layoutId,
-    })
+    .values(
+      eventsData.map((eventData) => ({
+        id: eventData.id,
+        title: eventData.title,
+        subtitle: eventData.subtitle,
+        description: eventData.description,
+        heroImage: eventData.hero.image,
+        heroCta: eventData.hero.cta,
+        date: eventData.date,
+        locationCity: eventData.location.city,
+        locationVenue: eventData.location.venue,
+        locationAddress: eventData.location.address,
+        organizerName: eventData.organizer.name,
+        organizerImage: eventData.organizer.img,
+        layoutId: eventData.layoutId,
+      })),
+    )
     .onConflictDoNothing();
 
   await db
     .insert(eventSessions)
     .values(
-      eventData.sessions.map((session) => ({
-        id: session.id,
-        eventId: eventData.id,
-        speakerId: session.speakerId,
-        title: session.title,
-        from: new Date(session.from),
-        to: new Date(session.to),
-        description: session.description,
-        level: session.level,
-        track: session.track,
-        room: session.room,
-      })),
+      eventsData.flatMap((eventData) =>
+        eventData.sessions.map((session) => ({
+          id: session.id,
+          eventId: eventData.id,
+          speakerId: session.speakerId,
+          title: session.title,
+          from: new Date(session.from),
+          to: new Date(session.to),
+          description: session.description,
+          level: session.level,
+          track: session.track,
+          room: session.room,
+        })),
+      ),
     )
     .onConflictDoNothing();
 
   await db.$client.end();
 
+  const sessionCount = eventsData.reduce((total, event) => total + event.sessions.length, 0);
   console.log(
-    `Seeded ${speakersData.length} speaker(s), 1 event, ${eventData.sessions.length} session(s), 1 layout.`,
+    `Seeded ${speakersData.length} speaker(s), ${eventsData.length} event(s), ${sessionCount} session(s), 1 layout.`,
   );
 }
 

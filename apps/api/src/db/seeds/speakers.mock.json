@@ -5,5 +5,12 @@
     "title": "VP of Engineering, Example Corp",
     "bio": "Expert in serverless architectures and cloud-native development.",
     "image": "..."
+  },
+  {
+    "id": "b2e4f8a1-7c3d-4e2f-9a1b-5d6e7f8a9b0c",
+    "name": "Marcus Chen",
+    "title": "Principal Solutions Architect, CloudNative Co",
+    "bio": "Specializes in Kubernetes, container orchestration, and large-scale distributed systems.",
+    "image": "..."
   }
 ]
