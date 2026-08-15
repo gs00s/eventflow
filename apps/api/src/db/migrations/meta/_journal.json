@@ -5,8 +5,22 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1786722448157,
-      "tag": "0000_cloudy_oracle",
+      "when": 1786782765206,
+      "tag": "0000_create_speakers_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786791228116,
+      "tag": "0001_create_auth_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786792101253,
+      "tag": "0002_add_speakers_timestamps",
       "breakpoints": true
     }
   ]

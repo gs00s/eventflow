@@ -34,6 +34,10 @@ Never add a `Co-Authored-By: Claude` trailer, or any other self-attribution, to 
 - **Service** — owns DTO transformation. Never return raw database models from an endpoint, even when the mapping is 1:1. Real business logic (filtering, computed fields, validation) lives here too.
 - **Controller** — thin, delegates to the service.
 
+## Database migrations
+
+Always generate with an explicit name (`drizzle-kit generate --name=<snake_case_description>`, e.g. `create_speakers_table`) — never accept drizzle-kit's random adjective-noun default (`0000_cloudy_oracle.sql`). The name is the only human-readable trace of what a migration does; the SQL body doesn't say it.
+
 ## Testing conventions
 
 **File conventions**: co-locate specs with the code they test — no `test/`/`__tests__/` directories, even for integration tests. `.spec.` everywhere, never `.test.`.
