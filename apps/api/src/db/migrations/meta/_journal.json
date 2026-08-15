@@ -43,6 +43,13 @@
       "when": 1786817769277,
       "tag": "0005_add_is_vip_to_events_and_user",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786821478225,
+      "tag": "0006_create_registrations_table",
+      "breakpoints": true
     }
   ]
 }

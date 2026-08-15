@@ -66,4 +66,12 @@ describe('EventsRepository (integration)', () => {
 
     expect(result).toBeUndefined();
   });
+
+  it('reports whether an event id exists', async () => {
+    const found = await repository.exists(event.id);
+    const notFound = await repository.exists('00000000-0000-0000-0000-000000000000');
+
+    expect(found).toBe(true);
+    expect(notFound).toBe(false);
+  });
 });

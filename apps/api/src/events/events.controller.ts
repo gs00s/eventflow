@@ -1,5 +1,14 @@
-import { Controller, ForbiddenException, Get, NotFoundException, Param } from '@nestjs/common';
-import type { Event, EventDetail } from '@eventflow/shared-types';
+import {
+  ConflictException,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+} from '@nestjs/common';
+import type { Event, EventDetail, RegistrationStatus } from '@eventflow/shared-types';
 import { AllowAnonymous, Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type { auth } from '../auth/auth';
 import { EventsService } from './events.service';
@@ -43,5 +52,36 @@ export class EventsController {
     if (event.isVip) throw new ForbiddenException();
 
     return event;
+  }
+
+  @Get(':id/register')
+  async registrationStatus(
+    @Param('id') id: string,
+    @Session() session: UserSession<typeof auth>,
+  ): Promise<RegistrationStatus> {
+    const isRegistered = await this.eventsService.isRegistered(id, session.user.id);
+
+    return { isRegistered };
+  }
+
+  @Post(':id/register')
+  async register(
+    @Param('id') id: string,
+    @Session() session: UserSession<typeof auth>,
+  ): Promise<void> {
+    const eventExists = await this.eventsService.exists(id);
+    if (!eventExists) throw new NotFoundException();
+
+    const created = await this.eventsService.register(session.user.id, id);
+    if (!created) throw new ConflictException();
+  }
+
+  @Delete(':id/register')
+  async unregister(
+    @Param('id') id: string,
+    @Session() session: UserSession<typeof auth>,
+  ): Promise<void> {
+    const deleted = await this.eventsService.unregister(session.user.id, id);
+    if (!deleted) throw new NotFoundException();
   }
 }

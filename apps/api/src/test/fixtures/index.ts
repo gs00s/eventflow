@@ -3,3 +3,4 @@ export * from './event';
 export * from './event-session';
 export * from './layout';
 export * from './speaker';
+export * from './user';

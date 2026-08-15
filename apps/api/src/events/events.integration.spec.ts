@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { eventSessions, events, layouts, speakers, user } from '../db/schemas';
+import { eventSessions, events, layouts, registrations, speakers, user } from '../db/schemas';
 import { env } from '../env';
 import { createTestApp } from '../test/app-harness';
 import { eventFactory, eventSessionFactory, layoutFactory, speakerFactory } from '../test/fixtures';
@@ -18,6 +18,7 @@ describe('Events (integration)', () => {
 
   beforeAll(async () => {
     const db = drizzle(env.DATABASE_URL);
+    await db.delete(registrations);
     await db.delete(eventSessions);
     await db.delete(events);
     await db.delete(layouts);
@@ -45,6 +46,17 @@ describe('Events (integration)', () => {
     const db = drizzle(env.DATABASE_URL);
     await db.update(user).set({ isVip: true }).where(eq(user.email, email));
     await db.$client.end();
+
+    return agent;
+  }
+
+  async function registrantAgent() {
+    const agent = request.agent(app.getHttpServer());
+    await agent.post('/api/auth/sign-up/email').send({
+      email: `registrant-${Date.now()}@example.com`,
+      password: 'password1234',
+      name: 'Registrant',
+    });
 
     return agent;
   }
@@ -141,5 +153,70 @@ describe('Events (integration)', () => {
     const response = await agent.get(`/api/events/vip/${vipEvent.id}`);
 
     expect(response.status).toBe(403);
+  });
+
+  it('POST /api/events/:id/register returns 401 when unauthenticated', async () => {
+    const response = await request(app.getHttpServer()).post(`/api/events/${event.id}/register`);
+
+    expect(response.status).toBe(401);
+  });
+
+  it('POST /api/events/:id/register returns 404 for an unknown event', async () => {
+    const agent = await registrantAgent();
+
+    const response = await agent.post('/api/events/00000000-0000-0000-0000-000000000000/register');
+
+    expect(response.status).toBe(404);
+  });
+
+  it('POST /api/events/:id/register returns 409 for an already-registered viewer', async () => {
+    const agent = await registrantAgent();
+    await agent.post(`/api/events/${event.id}/register`);
+
+    const response = await agent.post(`/api/events/${event.id}/register`);
+
+    expect(response.status).toBe(409);
+  });
+
+  it('GET /api/events/:id/register returns 401 when unauthenticated', async () => {
+    const response = await request(app.getHttpServer()).get(`/api/events/${event.id}/register`);
+
+    expect(response.status).toBe(401);
+  });
+
+  it('GET /api/events/:id/register reports isRegistered false before registering, then true after', async () => {
+    const agent = await registrantAgent();
+
+    const before = await agent.get(`/api/events/${event.id}/register`);
+    await agent.post(`/api/events/${event.id}/register`);
+    const after = await agent.get(`/api/events/${event.id}/register`);
+
+    expect(before.body).toEqual({ isRegistered: false });
+    expect(after.body).toEqual({ isRegistered: true });
+  });
+
+  it('DELETE /api/events/:id/register returns 401 when unauthenticated', async () => {
+    const response = await request(app.getHttpServer()).delete(`/api/events/${event.id}/register`);
+
+    expect(response.status).toBe(401);
+  });
+
+  it('DELETE /api/events/:id/register returns 404 when the viewer is not registered', async () => {
+    const agent = await registrantAgent();
+
+    const response = await agent.delete(`/api/events/${event.id}/register`);
+
+    expect(response.status).toBe(404);
+  });
+
+  it('removes an existing registration and reflects it on the next GET /api/events/:id/register', async () => {
+    const agent = await registrantAgent();
+    await agent.post(`/api/events/${event.id}/register`);
+
+    const deleteResponse = await agent.delete(`/api/events/${event.id}/register`);
+    const statusResponse = await agent.get(`/api/events/${event.id}/register`);
+
+    expect(deleteResponse.status).toBe(200);
+    expect(statusResponse.body).toEqual({ isRegistered: false });
   });
 });

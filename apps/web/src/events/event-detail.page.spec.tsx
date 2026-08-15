@@ -126,6 +126,7 @@ describe('EventDetailPage', () => {
             })
           : new HttpResponse(null, { status: 404 }),
       ),
+      http.get('/api/events/:id/register', () => HttpResponse.json({ isRegistered: false })),
     );
 
     await renderApp(`/events/${event.id}`);
