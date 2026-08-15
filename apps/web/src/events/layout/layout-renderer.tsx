@@ -6,10 +6,7 @@ export function LayoutRenderer({ components }: { components: LayoutComponent[] }
     <>
       {components.map((component) => {
         const Component = layoutComponentRegistry[component.type];
-        // The registry's mapped type already proves every `type` maps to a
-        // component accepting that exact narrowed shape; TS just can't see
-        // through the dynamic `component.type` lookup to re-narrow `component`
-        // itself at this call site.
+        // TS can't re-narrow `component` through the dynamic `component.type` lookup, though the registry's mapped type proves it matches.
         return <Component key={component.id} component={component as never} />;
       })}
     </>

@@ -27,6 +27,13 @@ pnpm db:migrate               # create tables
 pnpm db:seed                  # seed from docs/prds/speakers.mock.json
 ```
 
+Seeding also creates two demo accounts (idempotent — safe to re-run):
+
+| Email              | Password       | Role                                     |
+| ------------------ | -------------- | ---------------------------------------- |
+| `demo@example.com` | `password1234` | Regular member — sees only public events |
+| `vip@example.com`  | `password1234` | VIP member — also sees VIP-gated events  |
+
 ### Run
 
 ```sh

@@ -36,6 +36,13 @@
       "when": 1786810383894,
       "tag": "0004_create_layouts_table",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786817769277,
+      "tag": "0005_add_is_vip_to_events_and_user",
+      "breakpoints": true
     }
   ]
 }

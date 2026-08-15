@@ -6,13 +6,13 @@ import { EventsRepository } from './events.repository';
 import { EventsService } from './events.service';
 
 describe('EventsService', () => {
-  it('maps repository rows to event DTOs', async () => {
+  it('maps public repository rows to event DTOs', async () => {
     const row = eventFactory.build();
     const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
-    vi.spyOn(module.get(EventsRepository), 'findAll').mockResolvedValue([row]);
+    vi.spyOn(module.get(EventsRepository), 'findPublic').mockResolvedValue([row]);
     const service = module.get(EventsService);
 
-    const result = await service.findAll();
+    const result = await service.findPublic();
 
     expect(result).toEqual([
       {
@@ -26,8 +26,22 @@ describe('EventsService', () => {
           address: row.locationAddress,
         },
         hero: { image: row.heroImage, cta: row.heroCta },
+        isVip: row.isVip,
       },
     ]);
+  });
+
+  it('maps every repository row to event DTOs for the VIP list', async () => {
+    const publicRow = eventFactory.build();
+    const vipRow = eventFactory.build({ isVip: true });
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findAll').mockResolvedValue([publicRow, vipRow]);
+    const service = module.get(EventsService);
+
+    const result = await service.findAllForVip();
+
+    expect(result.map((event) => event.id)).toEqual([publicRow.id, vipRow.id]);
+    expect(result.find((event) => event.id === vipRow.id)?.isVip).toBe(true);
   });
 
   it('maps a detail row with its sessions, deduped speakers, and layout to an EventDetail DTO', async () => {
@@ -56,6 +70,7 @@ describe('EventsService', () => {
         address: row.locationAddress,
       },
       hero: { image: row.heroImage, cta: row.heroCta },
+      isVip: row.isVip,
       description: row.description,
       organizer: { name: row.organizerName, image: row.organizerImage },
       sessions: [

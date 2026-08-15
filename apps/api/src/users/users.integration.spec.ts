@@ -40,6 +40,7 @@ describe('Users (integration)', () => {
       id: expect.any(String),
       email: credentials.email,
       name: 'Jane Doe',
+      isVip: false,
     });
 
     await agent.post('/api/auth/sign-out');
