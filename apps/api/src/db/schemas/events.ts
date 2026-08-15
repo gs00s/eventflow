@@ -1,4 +1,5 @@
 import { date, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { layouts } from './layouts';
 
 export const events = pgTable('events', {
   id: uuid().primaryKey().defaultRandom(),
@@ -13,6 +14,7 @@ export const events = pgTable('events', {
   locationAddress: text('location_address').notNull(),
   organizerName: text('organizer_name').notNull(),
   organizerImage: text('organizer_image').notNull(),
+  layoutId: uuid('layout_id').references(() => layouts.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at')
     .defaultNow()

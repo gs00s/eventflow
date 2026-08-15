@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { describe, expect, it, vi } from 'vitest';
-import { eventFactory, eventSessionFactory, speakerFactory } from '../test/fixtures';
+import { eventFactory, eventSessionFactory, layoutFactory, speakerFactory } from '../test/fixtures';
 import { EventsModule } from './events.module';
 import { EventsRepository } from './events.repository';
 import { EventsService } from './events.service';
@@ -30,14 +30,16 @@ describe('EventsService', () => {
     ]);
   });
 
-  it('maps a detail row with its sessions and deduped speakers to an EventDetail DTO', async () => {
+  it('maps a detail row with its sessions, deduped speakers, and layout to an EventDetail DTO', async () => {
     const row = eventFactory.build();
     const speaker = speakerFactory.build();
     const session = eventSessionFactory.build({ eventId: row.id, speakerId: speaker.id });
+    const layout = layoutFactory.build();
     const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
     vi.spyOn(module.get(EventsRepository), 'findById').mockResolvedValue({
       ...row,
       sessions: [{ ...session, speaker }],
+      layout,
     });
     const service = module.get(EventsService);
 
@@ -84,7 +86,40 @@ describe('EventsService', () => {
           image: speaker.image,
         },
       ],
+      layout: { id: layout.id, components: layout.components },
     });
+  });
+
+  it('returns a null layout when the event has none', async () => {
+    const row = eventFactory.build();
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findById').mockResolvedValue({
+      ...row,
+      sessions: [],
+      layout: null,
+    });
+    const service = module.get(EventsService);
+
+    const result = await service.findById(row.id);
+
+    expect(result?.layout).toBeNull();
+  });
+
+  it('rejects a malformed layout instead of serving it', async () => {
+    const row = eventFactory.build();
+    const layout = layoutFactory.build({
+      // @ts-expect-error deliberately invalid: an unknown component type
+      components: [{ id: 'x', type: 'Video', data: {}, components: [] }],
+    });
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findById').mockResolvedValue({
+      ...row,
+      sessions: [],
+      layout,
+    });
+    const service = module.get(EventsService);
+
+    await expect(service.findById(row.id)).rejects.toThrow();
   });
 
   it('returns undefined when the event is not found', async () => {

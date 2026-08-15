@@ -2,14 +2,15 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { eventSessions, events, speakers } from '../db/schemas';
+import { eventSessions, events, layouts, speakers } from '../db/schemas';
 import { env } from '../env';
 import { createTestApp } from '../test/app-harness';
-import { eventFactory, eventSessionFactory, speakerFactory } from '../test/fixtures';
+import { eventFactory, eventSessionFactory, layoutFactory, speakerFactory } from '../test/fixtures';
 
 describe('Events (integration)', () => {
   let app: NestExpressApplication;
-  const event = eventFactory.build();
+  const layout = layoutFactory.build();
+  const event = eventFactory.build({ layoutId: layout.id });
   const speaker = speakerFactory.build();
   const session = eventSessionFactory.build({ eventId: event.id, speakerId: speaker.id });
 
@@ -17,8 +18,10 @@ describe('Events (integration)', () => {
     const db = drizzle(env.DATABASE_URL);
     await db.delete(eventSessions);
     await db.delete(events);
+    await db.delete(layouts);
     await db.delete(speakers);
     await db.insert(speakers).values(speaker);
+    await db.insert(layouts).values(layout);
     await db.insert(events).values(event);
     await db.insert(eventSessions).values(session);
     await db.$client.end();
@@ -37,7 +40,7 @@ describe('Events (integration)', () => {
     expect(response.body).toEqual([expect.objectContaining({ title: event.title })]);
   });
 
-  it('GET /api/events/:id returns the event detail with its sessions and speakers', async () => {
+  it('GET /api/events/:id returns the event detail with its sessions, speakers, and layout', async () => {
     const response = await request(app.getHttpServer()).get(`/api/events/${event.id}`);
 
     expect(response.status).toBe(200);
@@ -51,6 +54,7 @@ describe('Events (integration)', () => {
         }),
       ],
       speakers: [expect.objectContaining({ id: speaker.id, name: speaker.name })],
+      layout: { id: layout.id, components: layout.components },
     });
   });
 

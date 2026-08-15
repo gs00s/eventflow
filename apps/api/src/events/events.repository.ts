@@ -18,6 +18,7 @@ export class EventsRepository {
         sessions: {
           with: { speaker: true },
         },
+        layout: true,
       },
     });
   }

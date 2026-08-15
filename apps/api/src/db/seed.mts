@@ -2,12 +2,13 @@ import 'dotenv/config';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { speakerSchema } from '@eventflow/shared-types';
+import { layoutSchema, speakerSchema } from '@eventflow/shared-types';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as z from 'zod';
 import { env } from '../env.ts';
 import { eventSessions } from './schemas/event-sessions.ts';
 import { events } from './schemas/events.ts';
+import { layouts } from './schemas/layouts.ts';
 import { speakers } from './schemas/speakers.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -34,6 +35,7 @@ const eventMockSchema = z.object({
       room: z.string(),
     }),
   ),
+  layoutId: z.string(),
 });
 
 async function seed() {
@@ -45,9 +47,25 @@ async function seed() {
   const eventRaw = JSON.parse(readFileSync(resolve(__dirname, './seeds/event.mock.json'), 'utf8'));
   const eventData = eventMockSchema.parse(eventRaw);
 
+  const layoutRaw = JSON.parse(
+    readFileSync(resolve(__dirname, './seeds/layout.mock.json'), 'utf8'),
+  );
+  const layoutData = layoutSchema.parse(layoutRaw);
+
+  if (layoutData.id !== eventData.layoutId) {
+    throw new Error(
+      "Seed data mismatch: event.mock.json's layoutId doesn't match layout.mock.json's id.",
+    );
+  }
+
   const db = drizzle(env.DATABASE_URL);
 
   await db.insert(speakers).values(speakersData).onConflictDoNothing();
+
+  await db
+    .insert(layouts)
+    .values({ id: layoutData.id, components: layoutData.components })
+    .onConflictDoNothing();
 
   await db
     .insert(events)
@@ -64,6 +82,7 @@ async function seed() {
       locationAddress: eventData.location.address,
       organizerName: eventData.organizer.name,
       organizerImage: eventData.organizer.img,
+      layoutId: eventData.layoutId,
     })
     .onConflictDoNothing();
 
@@ -88,7 +107,7 @@ async function seed() {
   await db.$client.end();
 
   console.log(
-    `Seeded ${speakersData.length} speaker(s), 1 event, ${eventData.sessions.length} session(s).`,
+    `Seeded ${speakersData.length} speaker(s), 1 event, ${eventData.sessions.length} session(s), 1 layout.`,
   );
 }
 

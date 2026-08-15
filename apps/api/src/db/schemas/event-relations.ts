@@ -1,10 +1,15 @@
 import { relations } from 'drizzle-orm';
 import { eventSessions } from './event-sessions';
 import { events } from './events';
+import { layouts } from './layouts';
 import { speakers } from './speakers';
 
-export const eventRelations = relations(events, ({ many }) => ({
+export const eventRelations = relations(events, ({ many, one }) => ({
   sessions: many(eventSessions),
+  layout: one(layouts, {
+    fields: [events.layoutId],
+    references: [layouts.id],
+  }),
 }));
 
 export const eventSessionRelations = relations(eventSessions, ({ one }) => ({

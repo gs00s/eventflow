@@ -29,6 +29,13 @@
       "when": 1786806304448,
       "tag": "0003_create_events_and_sessions_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786810383894,
+      "tag": "0004_create_layouts_table",
+      "breakpoints": true
     }
   ]
 }

@@ -1,15 +1,16 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DbService } from '../db/db.service';
-import { eventSessions, events, speakers } from '../db/schemas';
-import { eventFactory, eventSessionFactory, speakerFactory } from '../test/fixtures';
+import { eventSessions, events, layouts, speakers } from '../db/schemas';
+import { eventFactory, eventSessionFactory, layoutFactory, speakerFactory } from '../test/fixtures';
 import { EventsModule } from './events.module';
 import { EventsRepository } from './events.repository';
 
 describe('EventsRepository (integration)', () => {
   let module: TestingModule;
   let repository: EventsRepository;
-  const event = eventFactory.build();
+  const layout = layoutFactory.build();
+  const event = eventFactory.build({ layoutId: layout.id });
   const speaker = speakerFactory.build();
   const session = eventSessionFactory.build({ eventId: event.id, speakerId: speaker.id });
 
@@ -20,8 +21,10 @@ describe('EventsRepository (integration)', () => {
     const dbService = module.get(DbService);
     await dbService.db.delete(eventSessions);
     await dbService.db.delete(events);
+    await dbService.db.delete(layouts);
     await dbService.db.delete(speakers);
     await dbService.db.insert(speakers).values(speaker);
+    await dbService.db.insert(layouts).values(layout);
     await dbService.db.insert(events).values(event);
     await dbService.db.insert(eventSessions).values(session);
   });
@@ -36,7 +39,7 @@ describe('EventsRepository (integration)', () => {
     expect(result).toEqual([expect.objectContaining({ title: event.title })]);
   });
 
-  it('returns an event with its sessions and their assigned speakers', async () => {
+  it('returns an event with its sessions, their assigned speakers, and its layout', async () => {
     const result = await repository.findById(event.id);
 
     expect(result).toMatchObject({
@@ -47,6 +50,7 @@ describe('EventsRepository (integration)', () => {
           speaker: expect.objectContaining({ id: speaker.id }),
         }),
       ],
+      layout: expect.objectContaining({ id: layout.id }),
     });
   });
 
