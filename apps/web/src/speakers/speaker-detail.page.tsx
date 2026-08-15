@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link, useParams } from '@tanstack/react-router';
+import { useParams } from '@tanstack/react-router';
 import { fetchSpeaker } from '@/lib/api';
+import { SpeakerEventList } from './components/speaker-event-list';
 
-export function SpeakerDetail() {
+export function SpeakerDetailPage() {
   const { speakerId } = useParams({ from: '/speakers/$speakerId' });
   const { data, isLoading, isError } = useQuery({
     queryKey: ['speakers', speakerId],
@@ -20,16 +21,7 @@ export function SpeakerDetail() {
           <p className="mt-4">{data.bio}</p>
 
           <h2 className="mt-8 text-lg font-semibold">Events</h2>
-          <ul className="mt-2 space-y-2">
-            {data.events.map((event) => (
-              <li key={event.id}>
-                <Link to="/events/$eventId" params={{ eventId: event.id }} className="underline">
-                  {event.title}
-                </Link>
-                <span className="ml-2 text-sm text-muted-foreground">{event.date}</span>
-              </li>
-            ))}
-          </ul>
+          <SpeakerEventList events={data.events} />
         </>
       )}
     </div>

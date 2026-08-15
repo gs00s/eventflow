@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
 import { fetchEvents } from '@/lib/api';
+import { EventListItem } from './components/event-list-item';
 
-export function Events() {
+export function EventsPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['events'],
     queryFn: fetchEvents,
@@ -16,14 +16,7 @@ export function Events() {
       {data && (
         <ul className="mt-4 space-y-4">
           {data.map((event) => (
-            <li key={event.id}>
-              <Link to="/events/$eventId" params={{ eventId: event.id }} className="underline">
-                {event.title}
-              </Link>
-              <p className="text-sm text-muted-foreground">
-                {event.date} · {event.location.city}
-              </p>
-            </li>
+            <EventListItem key={event.id} event={event} />
           ))}
         </ul>
       )}

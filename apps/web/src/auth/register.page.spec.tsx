@@ -7,7 +7,7 @@ import { setupRouterTest } from '@/test/router-harness';
 
 const renderApp = setupRouterTest();
 
-describe('Register', () => {
+describe('RegisterPage', () => {
   it('submits the new account and redirects home on success', async () => {
     const user = userFactory.build({ name: 'Jane Doe', email: 'jane@example.com' });
     let receivedBody: unknown;
