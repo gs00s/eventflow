@@ -11,6 +11,7 @@ import { authClient } from '@/lib/auth-client';
 
 const links = [
   { to: '/', label: 'Home' },
+  { to: '/events', label: 'Events' },
   { to: '/speakers', label: 'Speakers' },
 ] as const;
 

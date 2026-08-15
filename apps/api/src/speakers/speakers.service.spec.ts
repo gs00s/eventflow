@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { describe, expect, it, vi } from 'vitest';
-import { speakerFactory } from '../test/fixtures';
+import { eventFactory, eventSessionFactory, speakerFactory } from '../test/fixtures';
 import { SpeakersModule } from './speakers.module';
 import { SpeakersRepository } from './speakers.repository';
 import { SpeakersService } from './speakers.service';
@@ -17,5 +17,38 @@ describe('SpeakersService', () => {
     expect(result).toEqual([
       { id: row.id, name: row.name, title: row.title, bio: row.bio, image: row.image },
     ]);
+  });
+
+  it('maps a detail row with its deduped linked events to a SpeakerDetail DTO', async () => {
+    const row = speakerFactory.build();
+    const event = eventFactory.build();
+    const session = eventSessionFactory.build({ eventId: event.id, speakerId: row.id });
+    const module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
+    vi.spyOn(module.get(SpeakersRepository), 'findById').mockResolvedValue({
+      ...row,
+      sessions: [{ ...session, event }],
+    });
+    const service = module.get(SpeakersService);
+
+    const result = await service.findById(row.id);
+
+    expect(result).toEqual({
+      id: row.id,
+      name: row.name,
+      title: row.title,
+      bio: row.bio,
+      image: row.image,
+      events: [{ id: event.id, title: event.title, date: event.date }],
+    });
+  });
+
+  it('returns undefined when the speaker is not found', async () => {
+    const module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
+    vi.spyOn(module.get(SpeakersRepository), 'findById').mockResolvedValue(undefined);
+    const service = module.get(SpeakersService);
+
+    const result = await service.findById('missing-id');
+
+    expect(result).toBeUndefined();
   });
 });

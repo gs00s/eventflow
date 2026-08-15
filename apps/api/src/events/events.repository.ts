@@ -1,22 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
-import { speakers } from '../db/schemas';
+import { events } from '../db/schemas';
 
 @Injectable()
-export class SpeakersRepository {
+export class EventsRepository {
   constructor(private readonly dbService: DbService) {}
 
   findAll() {
-    return this.dbService.db.select().from(speakers);
+    return this.dbService.db.select().from(events);
   }
 
   findById(id: string) {
-    return this.dbService.db.query.speakers.findFirst({
-      where: eq(speakers.id, id),
+    return this.dbService.db.query.events.findFirst({
+      where: eq(events.id, id),
       with: {
         sessions: {
-          with: { event: true },
+          with: { speaker: true },
         },
       },
     });
