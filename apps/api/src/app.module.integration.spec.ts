@@ -1,4 +1,4 @@
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import request from 'supertest';
@@ -8,7 +8,7 @@ import { speakers } from './db/schemas/speakers';
 import { env } from './env';
 
 describe('App (integration)', () => {
-  let app: NestFastifyApplication;
+  let app: NestExpressApplication;
 
   beforeAll(async () => {
     const db = drizzle(env.DATABASE_URL);
@@ -25,17 +25,17 @@ describe('App (integration)', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    app = moduleRef.createNestApplication<NestExpressApplication>();
+    app.setGlobalPrefix('api');
     await app.init();
-    await app.getHttpAdapter().getInstance().ready();
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('GET /speakers returns the seeded speakers from the database', async () => {
-    const response = await request(app.getHttpServer()).get('/speakers');
+  it('GET /api/speakers returns the seeded speakers from the database', async () => {
+    const response = await request(app.getHttpServer()).get('/api/speakers');
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual([expect.objectContaining({ name: 'Dr. Jane Doe' })]);

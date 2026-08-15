@@ -35,13 +35,13 @@ pnpm dev
 
 Starts both apps in parallel via Turborepo:
 
-- **API** — NestJS on Fastify, http://localhost:3000
-- **Web** — Vite dev server, http://localhost:5173
+- **API** — NestJS on Express, http://localhost:9000
+- **Web** — Vite dev server, http://localhost:7000, proxying `/api` to the API (mirrors the Firebase Hosting → Cloud Run rewrite used in production)
 
 Verify the API:
 
 ```sh
-curl http://localhost:3000/speakers
+curl http://localhost:7000/api/speakers
 ```
 
 ### Scripts

@@ -12,11 +12,11 @@ EventFlow requires a backend serving flexible, template-driven event pages (recu
 
 **Runtime**: Node.js + TypeScript — matches existing scaffolding, gives a type-safety story for the README.
 
-**Backend framework**: NestJS on the Fastify adapter (`@nestjs/platform-fastify`). Nest's modules/DI/Guards give a demonstrable structure (VIP-gating via Guards, testable services via DI) without giving up Fastify's lightweight core and native JSON-Schema/AJV validation, which fits the recursive layout tree well.
+**Backend framework**: NestJS on the Express adapter (`@nestjs/platform-express`) — ~~originally Fastify~~, switched per [ADR 0002](./0002-authentication.md): Better Auth's NestJS integration is Express-first and only "beta" on Fastify, and nothing in this codebase depended on Fastify specifically (no AJV/JSON-Schema validation was ever wired in). Nest's modules/DI/Guards still give the demonstrable structure (VIP-gating via Guards, testable services via DI) independent of the underlying HTTP adapter.
 
 **ORM / DB**: Drizzle + PostgreSQL. Relational tables for `users`/`events`/`speakers`/`sessions`/`registrations`; the recursive layout tree stored as a single **JSONB** column, validated at the route boundary via AJV. `drizzle-kit` for migrations.
 
-**Auth**: Hand-rolled on Passport (`passport-local` + `passport-jwt`) + `@nestjs/jwt` + `argon2`. Idiomatic Nest pattern, stateless JWT (role/sub trusted from payload — no revocation without re-issuing/blocklist). Building auth is part of what's graded, so no auth-as-a-service library.
+**Auth**: ~~Hand-rolled on Passport (`passport-local` + `passport-jwt`) + `@nestjs/jwt` + `argon2`~~ — **superseded by [ADR 0002](./0002-authentication.md)**, which adopts Better Auth instead.
 
 **Frontend**: Vite + React + TS — thin, matches the "basic UI" scope (single event-listing page). Styling via **Tailwind CSS + shadcn/ui** (Base UI primitives — shadcn's current default, accessible, no custom design-system work needed at this scope). **TanStack Query** for server state/data fetching (`GET /events`, `GET /events/:id`, `POST /auth/login`), typed against `packages/shared-types` — the app has real mutations (login, registration, optional org-edit), not just reads, and Query's mutation support is more fleshed-out than the alternatives. **TanStack Router** for routing (home/event-detail/login) — fully type-safe route params, same vendor/philosophy as Query. **Zustand** for the small slice of client state (auth token, VIP flag) shared between the login form and event views — pairs with TanStack Query as the current standard split of server vs. client state, far less boilerplate than Redux at this scope.
 
