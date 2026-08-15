@@ -14,7 +14,7 @@ EventFlow requires a backend serving flexible, template-driven event pages (recu
 
 **Backend framework**: NestJS on the Express adapter (`@nestjs/platform-express`) — ~~originally Fastify~~, switched per [ADR 0002](./0002-authentication.md): Better Auth's NestJS integration is Express-first and only "beta" on Fastify, and nothing in this codebase depended on Fastify specifically (no AJV/JSON-Schema validation was ever wired in). Nest's modules/DI/Guards still give the demonstrable structure (VIP-gating via Guards, testable services via DI) independent of the underlying HTTP adapter.
 
-**ORM / DB**: Drizzle + PostgreSQL. Relational tables for `users`/`events`/`speakers`/`sessions`/`registrations`; the recursive layout tree stored as a single **JSONB** column, validated at the route boundary via AJV. `drizzle-kit` for migrations.
+**ORM / DB**: Drizzle + PostgreSQL. Relational tables for `users`/`events`/`speakers`/`sessions`/`registrations`; the recursive layout tree stored as a single **JSONB** column, validated at the route boundary via a recursive **Zod** schema (`z.lazy()`) — not AJV/JSON-Schema as originally planned here: no AJV was ever wired in (see the Express/Fastify note above), and Zod is the validation library actually used everywhere else in this codebase (`env.ts`, `packages/shared-types`, seed scripts), so the layout tree uses it too instead of introducing a second validation library. `drizzle-kit` for migrations.
 
 **Auth**: ~~Hand-rolled on Passport (`passport-local` + `passport-jwt`) + `@nestjs/jwt` + `argon2`~~ — **superseded by [ADR 0002](./0002-authentication.md)**, which adopts Better Auth instead.
 
