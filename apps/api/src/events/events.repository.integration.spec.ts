@@ -3,19 +3,19 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DbService } from '../db/db.service';
 import { eventSessions, events, speakers } from '../db/schemas';
 import { eventFactory, eventSessionFactory, speakerFactory } from '../test/fixtures';
-import { SpeakersModule } from './speakers.module';
-import { SpeakersRepository } from './speakers.repository';
+import { EventsModule } from './events.module';
+import { EventsRepository } from './events.repository';
 
-describe('SpeakersRepository (integration)', () => {
+describe('EventsRepository (integration)', () => {
   let module: TestingModule;
-  let repository: SpeakersRepository;
-  const speaker = speakerFactory.build();
+  let repository: EventsRepository;
   const event = eventFactory.build();
+  const speaker = speakerFactory.build();
   const session = eventSessionFactory.build({ eventId: event.id, speakerId: speaker.id });
 
   beforeAll(async () => {
-    module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
-    repository = module.get(SpeakersRepository);
+    module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    repository = module.get(EventsRepository);
 
     const dbService = module.get(DbService);
     await dbService.db.delete(eventSessions);
@@ -30,22 +30,27 @@ describe('SpeakersRepository (integration)', () => {
     await module.close();
   });
 
-  it('returns the seeded speakers from the database', async () => {
+  it('returns the seeded events from the database', async () => {
     const result = await repository.findAll();
 
-    expect(result).toEqual([expect.objectContaining({ name: speaker.name })]);
+    expect(result).toEqual([expect.objectContaining({ title: event.title })]);
   });
 
-  it('returns a speaker with its sessions and their linked events', async () => {
-    const result = await repository.findById(speaker.id);
+  it('returns an event with its sessions and their assigned speakers', async () => {
+    const result = await repository.findById(event.id);
 
     expect(result).toMatchObject({
-      name: speaker.name,
-      sessions: [expect.objectContaining({ event: expect.objectContaining({ id: event.id }) })],
+      title: event.title,
+      sessions: [
+        expect.objectContaining({
+          title: session.title,
+          speaker: expect.objectContaining({ id: speaker.id }),
+        }),
+      ],
     });
   });
 
-  it('returns undefined for an unknown speaker id', async () => {
+  it('returns undefined for an unknown event id', async () => {
     const result = await repository.findById('00000000-0000-0000-0000-000000000000');
 
     expect(result).toBeUndefined();

@@ -1,0 +1,42 @@
+{
+  "id": "549244a3-6ab5-493a-879d-e70f5fd2bb18",
+  "title": "AWS Cloud Innovators Summit 2025",
+  "subtitle": "Explore the future of cloud computing",
+  "description": "Join us for the AWS Cloud Innovators Summit 2025, a one-day event focused on the latest in cloud computing, AI/ML, and serverless technologies.",
+  "isVIP": false,
+  "hero": {
+    "image": "...",
+    "cta": "Register Now"
+  },
+  "date": "2025-10-26",
+  "location": {
+    "city": "Las Vegas",
+    "venue": "The Venetian Resort",
+    "address": "3355 Las Vegas Blvd S, Las Vegas, NV 89109, USA"
+  },
+  "organizer": {
+    "id": "e710770e-6d0a-4fbc-a621-0f30f5ac65b4",
+    "name": "Snapsoft",
+    "img": "..."
+  },
+  "sessions": [
+    {
+      "id": "ee1b31fd-488a-4f3f-981c-a62403b2d1bd",
+      "title": "Building Serverless Applications with AWS Lambda",
+      "from": "2025-10-26T10:00:00.000Z",
+      "to": "2025-10-26T11:00:00.000Z",
+      "speakerId": "dfed351e-0953-4d31-9856-1f56bcbfe939",
+      "description": "Learn how to build scalable and cost-effective serverless applications using AWS Lambda and other services.",
+      "level": "Intermediate",
+      "track": "Serverless",
+      "room": "Venetian Ballroom A"
+    }
+  ],
+  "registration": {
+    "openDate": "2025-08-01",
+    "closeDate": "2025-10-20",
+    "fee": 99.0,
+    "earlyBirdDiscount": 20.0
+  },
+  "layoutId": "3b16bad7-a9fe-4e3e-b8ba-fbadfb63461f"
+}
