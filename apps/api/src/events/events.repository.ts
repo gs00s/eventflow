@@ -11,6 +11,10 @@ export class EventsRepository {
     return this.dbService.db.select().from(events);
   }
 
+  findPublic() {
+    return this.dbService.db.select().from(events).where(eq(events.isVip, false));
+  }
+
   findById(id: string) {
     return this.dbService.db.query.events.findFirst({
       where: eq(events.id, id),

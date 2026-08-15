@@ -17,7 +17,7 @@ describe('ProfilePage', () => {
     const user = userFactory.build();
     server.use(
       http.get('/api/users/me', () =>
-        HttpResponse.json({ id: user.id, name: user.name, email: user.email }),
+        HttpResponse.json({ id: user.id, name: user.name, email: user.email, isVip: user.isVip }),
       ),
     );
 

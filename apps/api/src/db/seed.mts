@@ -3,21 +3,29 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { layoutSchema, speakerSchema } from '@eventflow/shared-types';
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as z from 'zod';
+import { auth } from '../auth/auth.ts';
+import { db as sharedDb } from './connection.ts';
 import { env } from '../env.ts';
 import { eventSessions } from './schemas/event-sessions.ts';
 import { events } from './schemas/events.ts';
 import { layouts } from './schemas/layouts.ts';
 import { speakers } from './schemas/speakers.ts';
+import { user } from './schemas/user.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const VIP_USER_EMAIL = 'vip@example.com';
+const DEMO_USER_EMAIL = 'demo@example.com';
 
 const eventMockSchema = z.object({
   id: z.string(),
   title: z.string(),
   subtitle: z.string(),
   description: z.string(),
+  isVIP: z.boolean(),
   hero: z.object({ image: z.string(), cta: z.string() }),
   date: z.string(),
   location: z.object({ city: z.string(), venue: z.string(), address: z.string() }),
@@ -77,6 +85,7 @@ async function seed() {
         title: eventData.title,
         subtitle: eventData.subtitle,
         description: eventData.description,
+        isVip: eventData.isVIP,
         heroImage: eventData.hero.image,
         heroCta: eventData.hero.cta,
         date: eventData.date,
@@ -110,12 +119,27 @@ async function seed() {
     )
     .onConflictDoNothing();
 
+  await ensureUser(DEMO_USER_EMAIL, 'Demo Member');
+
+  // isVip isn't a sign-up input (ADR 0002/0003) — flipped directly after creation.
+  await ensureUser(VIP_USER_EMAIL, 'VIP Member');
+  await db.update(user).set({ isVip: true }).where(eq(user.email, VIP_USER_EMAIL));
+
   await db.$client.end();
+  await sharedDb.$client.end();
 
   const sessionCount = eventsData.reduce((total, event) => total + event.sessions.length, 0);
   console.log(
-    `Seeded ${speakersData.length} speaker(s), ${eventsData.length} event(s), ${sessionCount} session(s), 1 layout.`,
+    `Seeded ${speakersData.length} speaker(s), ${eventsData.length} event(s), ${sessionCount} session(s), 1 layout, ` +
+      `1 demo user (${DEMO_USER_EMAIL} / password1234), 1 VIP user (${VIP_USER_EMAIL} / password1234).`,
   );
+}
+
+async function ensureUser(email: string, name: string) {
+  const existingUser = await sharedDb.query.user.findFirst({ where: eq(user.email, email) });
+  if (existingUser) return;
+
+  await auth.api.signUpEmail({ body: { email, password: 'password1234', name } });
 }
 
 void seed();

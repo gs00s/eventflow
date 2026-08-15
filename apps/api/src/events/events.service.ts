@@ -9,7 +9,13 @@ type EventRow = typeof events.$inferSelect;
 export class EventsService {
   constructor(private readonly eventsRepository: EventsRepository) {}
 
-  async findAll(): Promise<Event[]> {
+  async findPublic(): Promise<Event[]> {
+    const rows = await this.eventsRepository.findPublic();
+
+    return rows.map(toEvent);
+  }
+
+  async findAllForVip(): Promise<Event[]> {
     const rows = await this.eventsRepository.findAll();
 
     return rows.map(toEvent);
@@ -52,9 +58,7 @@ export class EventsService {
         bio: speaker.bio,
         image: speaker.image,
       })),
-      // Re-validated here, not just cast via drizzle's $type<>() at the schema
-      // level (a compile-time-only assertion) — jsonb has no DB-level shape
-      // enforcement, so this is the actual API-boundary gate on layout data.
+      // Re-validated here since jsonb has no DB-level shape enforcement — drizzle's $type<>() is compile-time only.
       layout: row.layout ? layoutSchema.parse(row.layout) : null,
     };
   }
@@ -75,5 +79,6 @@ function toEvent(row: EventRow): Event {
       image: row.heroImage,
       cta: row.heroCta,
     },
+    isVip: row.isVip,
   };
 }

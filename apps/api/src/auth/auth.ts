@@ -12,6 +12,14 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  user: {
+    additionalFields: {
+      isVip: {
+        type: 'boolean',
+        input: false,
+      },
+    },
+  },
   rateLimit: {
     enabled: true,
     window: 60,

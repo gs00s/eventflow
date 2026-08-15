@@ -14,6 +14,7 @@ export interface EventRow {
   locationAddress: string;
   organizerName: string;
   organizerImage: string;
+  isVip: boolean;
   layoutId: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -32,6 +33,7 @@ export const eventFactory = Factory.define<EventRow>(() => ({
   locationAddress: '3355 Las Vegas Blvd S, Las Vegas, NV 89109, USA',
   organizerName: 'Snapsoft',
   organizerImage: '...',
+  isVip: false,
   layoutId: null,
   createdAt: faker.date.past(),
   updatedAt: faker.date.recent(),

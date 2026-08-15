@@ -7,6 +7,7 @@ export interface EventFixture {
   date: string;
   location: { city: string; venue: string; address: string };
   hero: { image: string; cta: string };
+  isVip: boolean;
 }
 
 export const eventFactory = Factory.define<EventFixture>(({ sequence }) => ({
@@ -20,4 +21,5 @@ export const eventFactory = Factory.define<EventFixture>(({ sequence }) => ({
     address: '3355 Las Vegas Blvd S, Las Vegas, NV 89109, USA',
   },
   hero: { image: '...', cta: 'Register Now' },
+  isVip: false,
 }));

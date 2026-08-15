@@ -7,6 +7,7 @@ export interface AuthUser {
   email: string;
   emailVerified: boolean;
   image: string | null;
+  isVip: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -17,6 +18,7 @@ export const userFactory = Factory.define<AuthUser>(({ sequence }) => ({
   email: `jane.doe.${sequence}@example.com`,
   emailVerified: false,
   image: null,
+  isVip: false,
   createdAt: faker.date.past().toISOString(),
   updatedAt: faker.date.recent().toISOString(),
 }));

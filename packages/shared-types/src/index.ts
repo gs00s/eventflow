@@ -14,6 +14,7 @@ export const currentUserSchema = z.object({
   id: z.string(),
   email: z.string(),
   name: z.string(),
+  isVip: z.boolean(),
 });
 
 export type CurrentUser = z.infer<typeof currentUserSchema>;
@@ -36,6 +37,7 @@ export const eventSchema = z.object({
   date: z.string(),
   location: eventLocationSchema,
   hero: eventHeroSchema,
+  isVip: z.boolean(),
 });
 
 export type Event = z.infer<typeof eventSchema>;
@@ -141,9 +143,7 @@ export interface SectionComponent {
   components: LayoutComponent[];
 }
 
-// A Section's children can be any building block, including nested Sections,
-// so its schema must reference the top-level union — z.lazy() breaks the
-// circular definition that would otherwise be required at module-eval time.
+// z.lazy() breaks the circular reference to the top-level union that nested Sections require.
 const sectionSchema: z.ZodType<SectionComponent> = z.lazy(() =>
   z.object({
     id: z.string(),
@@ -153,9 +153,7 @@ const sectionSchema: z.ZodType<SectionComponent> = z.lazy(() =>
   }),
 );
 
-// SpeakerCard/SessionCard are deliberately excluded here: the PRD only ever
-// nests them under SpeakerList/SessionSchedule respectively, so they aren't
-// valid as a freestanding building block anywhere a generic component is.
+// SpeakerCard/SessionCard excluded: the PRD only nests them under SpeakerList/SessionSchedule, never freestanding.
 export type LayoutComponent =
   | SectionComponent
   | HeadingComponent
@@ -163,10 +161,7 @@ export type LayoutComponent =
   | SpeakerListComponent
   | SessionScheduleComponent;
 
-// A plain union, not z.discriminatedUnion — Zod v4's discriminated union
-// requires each member to carry concrete discriminant metadata that a
-// z.lazy()-wrapped recursive branch (sectionSchema) doesn't expose to the
-// type checker, even though it validates correctly at runtime.
+// A plain union, not z.discriminatedUnion — the z.lazy()-wrapped sectionSchema branch doesn't expose discriminant metadata for that.
 export const layoutComponentSchema: z.ZodType<LayoutComponent> = z.lazy(() =>
   z.union([
     sectionSchema,

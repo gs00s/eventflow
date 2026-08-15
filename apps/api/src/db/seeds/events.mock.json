@@ -82,5 +82,47 @@
       "earlyBirdDiscount": 0
     },
     "layoutId": null
+  },
+  {
+    "id": "3d8f2c11-6a4b-4e5f-9c7d-2b1a8e9f0c3d",
+    "title": "Executive AI Leadership Roundtable",
+    "subtitle": "An invite-only strategy session for engineering leaders",
+    "description": "A closed-door roundtable for VP- and C-level engineering leaders to discuss AI adoption strategy, staffing, and platform investment.",
+    "isVIP": true,
+    "hero": {
+      "image": "...",
+      "cta": "Confirm Attendance"
+    },
+    "date": "2025-12-05",
+    "location": {
+      "city": "San Francisco",
+      "venue": "The Fairmont",
+      "address": "950 Mason St, San Francisco, CA 94108, USA"
+    },
+    "organizer": {
+      "id": "a9b8c7d6-e5f4-4a3b-8c9d-0e1f2a3b4c5d",
+      "name": "Snapsoft Executive Programs",
+      "img": "..."
+    },
+    "sessions": [
+      {
+        "id": "e4d3c2b1-a0f9-4e8d-9c7b-6a5f4e3d2c1b",
+        "title": "Scaling AI Platforms Without Scaling Headcount",
+        "from": "2025-12-05T09:00:00.000Z",
+        "to": "2025-12-05T10:30:00.000Z",
+        "speakerId": "dfed351e-0953-4d31-9856-1f56bcbfe939",
+        "description": "A closed discussion on platform investment strategy for AI-era engineering orgs.",
+        "level": "Executive",
+        "track": "Leadership",
+        "room": "Gold Room"
+      }
+    ],
+    "registration": {
+      "openDate": "2025-11-01",
+      "closeDate": "2025-12-01",
+      "fee": 499.0,
+      "earlyBirdDiscount": 0
+    },
+    "layoutId": null
   }
 ]

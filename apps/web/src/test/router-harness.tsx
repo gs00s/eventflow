@@ -3,8 +3,7 @@ import { createMemoryHistory, RouterProvider } from '@tanstack/react-router';
 import { render } from '@testing-library/react';
 import { beforeEach, vi } from 'vitest';
 
-// authClient caches session state as a module singleton, so each test needs
-// a fresh import — resetModules() + a dynamic (not static) import forces that.
+// authClient caches session as a module singleton — resetModules() + dynamic import forces a fresh one per test.
 export function setupRouterTest() {
   beforeEach(() => {
     vi.resetModules();

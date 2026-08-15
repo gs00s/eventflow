@@ -3,7 +3,14 @@ import type { LayoutComponent } from '@eventflow/shared-types';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { server } from '@/test/mocks/server';
-import { eventFactory, eventSessionFactory, layoutFactory, speakerFactory } from '@/test/fixtures';
+import {
+  eventFactory,
+  eventSessionFactory,
+  layoutFactory,
+  sessionFor,
+  speakerFactory,
+  userFactory,
+} from '@/test/fixtures';
 import { setupRouterTest } from '@/test/router-harness';
 
 const renderApp = setupRouterTest();
@@ -89,5 +96,41 @@ describe('EventDetailPage', () => {
     const error = await screen.findByText('Failed to load event.');
 
     expect(error).toBeTruthy();
+  });
+
+  it('shows an access-denied state for a VIP event when not authorized', async () => {
+    server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
+    server.use(http.get('/api/events/:id', () => new HttpResponse(null, { status: 403 })));
+
+    await renderApp('/events/some-vip-event');
+
+    const message = await screen.findByText('This event is only visible to signed-in VIP users.');
+
+    expect(message).toBeTruthy();
+  });
+
+  it('fetches through the VIP route and renders a VIP event for a VIP user', async () => {
+    const vipUser = userFactory.build({ isVip: true });
+    server.use(http.get('/api/auth/get-session', () => HttpResponse.json(sessionFor(vipUser))));
+    const event = eventFactory.build({ isVip: true });
+    server.use(
+      http.get('/api/events/vip/:id', ({ params }) =>
+        params.id === event.id
+          ? HttpResponse.json({
+              ...event,
+              description: 'An invite-only gathering for VIP members.',
+              organizer: { name: 'Snapsoft', image: '...' },
+              sessions: [],
+              speakers: [],
+              layout: null,
+            })
+          : new HttpResponse(null, { status: 404 }),
+      ),
+    );
+
+    await renderApp(`/events/${event.id}`);
+
+    const heading = await screen.findByRole('heading', { name: event.title });
+    expect(heading).toBeTruthy();
   });
 });

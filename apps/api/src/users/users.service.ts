@@ -10,6 +10,7 @@ export class UsersService {
       id: session.user.id,
       email: session.user.email,
       name: session.user.name,
+      isVip: session.user.isVip,
     };
   }
 }

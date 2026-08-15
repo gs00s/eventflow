@@ -87,6 +87,7 @@ describe('Auth (integration)', () => {
         id: expect.any(String),
         email: credentials.email,
         name: 'Login User',
+        isVip: false,
       });
     });
 

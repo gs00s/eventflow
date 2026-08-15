@@ -11,6 +11,7 @@ describe('EventsRepository (integration)', () => {
   let repository: EventsRepository;
   const layout = layoutFactory.build();
   const event = eventFactory.build({ layoutId: layout.id });
+  const vipEvent = eventFactory.build({ isVip: true });
   const speaker = speakerFactory.build();
   const session = eventSessionFactory.build({ eventId: event.id, speakerId: speaker.id });
 
@@ -25,7 +26,7 @@ describe('EventsRepository (integration)', () => {
     await dbService.db.delete(speakers);
     await dbService.db.insert(speakers).values(speaker);
     await dbService.db.insert(layouts).values(layout);
-    await dbService.db.insert(events).values(event);
+    await dbService.db.insert(events).values([event, vipEvent]);
     await dbService.db.insert(eventSessions).values(session);
   });
 
@@ -33,10 +34,16 @@ describe('EventsRepository (integration)', () => {
     await module.close();
   });
 
-  it('returns the seeded events from the database', async () => {
+  it('returns every seeded event from the database, VIP included', async () => {
     const result = await repository.findAll();
 
-    expect(result).toEqual([expect.objectContaining({ title: event.title })]);
+    expect(result.map((row) => row.id)).toEqual(expect.arrayContaining([event.id, vipEvent.id]));
+  });
+
+  it('excludes VIP events from the public query', async () => {
+    const result = await repository.findPublic();
+
+    expect(result.map((row) => row.id)).toEqual([event.id]);
   });
 
   it('returns an event with its sessions, their assigned speakers, and its layout', async () => {

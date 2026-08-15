@@ -6,9 +6,7 @@ import { Section } from './section';
 import { SessionSchedule } from './session-schedule';
 import { SpeakerList } from './speaker-list';
 
-// The gate: every LayoutComponent type must have an entry here, and every
-// entry must accept exactly that type's narrowed props — add or remove a
-// building block from the shared-types union and TS forces this to follow.
+// Every LayoutComponent type must map to a component accepting that exact narrowed props type.
 export const layoutComponentRegistry: {
   [K in LayoutComponent['type']]: ComponentType<{
     component: Extract<LayoutComponent, { type: K }>;
