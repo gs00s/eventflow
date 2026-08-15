@@ -4,7 +4,7 @@ const envSchema = z.object({
   DATABASE_URL: z.url(),
   CORS_ORIGIN: z.url().default('http://localhost:7000'),
   PORT: z.coerce.number().default(9000),
-  BETTER_AUTH_SECRET: z.string().min(1),
+  BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.url().default('http://localhost:9000'),
 });
 
