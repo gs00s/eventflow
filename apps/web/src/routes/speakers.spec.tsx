@@ -1,35 +1,29 @@
-import type { ReactElement } from 'react';
-import { render, screen } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { screen } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { server } from '@/test/mocks/server';
-import { Speakers } from './speakers';
+import { speakerFactory } from '@/test/fixtures';
+import { setupRouterTest } from '@/test/router-harness';
 
-function renderWithQueryClient(ui: ReactElement) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
-}
+const renderApp = setupRouterTest();
 
 describe('Speakers', () => {
-  it('renders the fetched speaker names', async () => {
-    server.use(
-      http.get('/api/speakers', () =>
-        HttpResponse.json([{ id: '1', name: 'Dr. Jane Doe', title: '', bio: '', image: '' }]),
-      ),
-    );
+  it('renders the fetched speakers, each linking to their detail page', async () => {
+    server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
+    const speaker = speakerFactory.build();
+    server.use(http.get('/api/speakers', () => HttpResponse.json([speaker])));
 
-    renderWithQueryClient(<Speakers />);
+    await renderApp('/speakers');
 
-    const name = await screen.findByText('Dr. Jane Doe');
-
-    expect(name).toBeTruthy();
+    const link = await screen.findByRole('link', { name: speaker.name });
+    expect(link.getAttribute('href')).toBe(`/speakers/${speaker.id}`);
   });
 
   it('shows an error message when the request fails', async () => {
+    server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
     server.use(http.get('/api/speakers', () => new HttpResponse(null, { status: 500 })));
 
-    renderWithQueryClient(<Speakers />);
+    await renderApp('/speakers');
 
     const error = await screen.findByText('Failed to load speakers.');
 

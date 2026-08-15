@@ -7,10 +7,13 @@ import {
 } from '@tanstack/react-router';
 import { authClient } from '@/lib/auth-client';
 import { RootLayout } from '@/routes/root';
+import { EventDetail } from '@/routes/event-detail';
+import { Events } from '@/routes/events';
 import { Home } from '@/routes/home';
 import { Login } from '@/routes/login';
 import { Profile } from '@/routes/profile';
 import { Register } from '@/routes/register';
+import { SpeakerDetail } from '@/routes/speaker-detail';
 import { Speakers } from '@/routes/speakers';
 
 const rootRoute = createRootRoute({ component: RootLayout });
@@ -21,10 +24,28 @@ const indexRoute = createRoute({
   component: Home,
 });
 
+const eventsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/events',
+  component: Events,
+});
+
+const eventDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/events/$eventId',
+  component: EventDetail,
+});
+
 const speakersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/speakers',
   component: Speakers,
+});
+
+const speakerDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/speakers/$speakerId',
+  component: SpeakerDetail,
 });
 
 const loginRoute = createRoute({
@@ -59,7 +80,10 @@ const profileRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  eventsRoute,
+  eventDetailRoute,
   speakersRoute,
+  speakerDetailRoute,
   loginRoute,
   registerRoute,
   profileRoute,

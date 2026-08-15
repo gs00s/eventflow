@@ -8,15 +8,17 @@ import { sessionFor, userFactory } from '@/test/fixtures';
 const renderApp = setupRouterTest();
 
 describe('Nav', () => {
-  it('renders links to Home and Speakers, highlighting the active one', async () => {
+  it('renders links to Home, Events, and Speakers, highlighting the active one', async () => {
     server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
     await renderApp('/');
     await screen.findByRole('link', { name: 'Home' });
 
     const home = screen.getByRole('link', { name: 'Home' });
+    const events = screen.getByRole('link', { name: 'Events' });
     const speakers = screen.getByRole('link', { name: 'Speakers' });
 
     expect(home.getAttribute('aria-current')).toBe('page');
+    expect(events.getAttribute('aria-current')).toBeNull();
     expect(speakers.getAttribute('aria-current')).toBeNull();
   });
 

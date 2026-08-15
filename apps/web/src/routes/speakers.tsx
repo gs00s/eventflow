@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { fetchSpeakers } from '@/lib/api';
 
 export function Speakers() {
@@ -15,7 +16,15 @@ export function Speakers() {
       {data && (
         <ul className="mt-4 space-y-2">
           {data.map((speaker) => (
-            <li key={speaker.id}>{speaker.name}</li>
+            <li key={speaker.id}>
+              <Link
+                to="/speakers/$speakerId"
+                params={{ speakerId: speaker.id }}
+                className="underline"
+              >
+                {speaker.name}
+              </Link>
+            </li>
           ))}
         </ul>
       )}

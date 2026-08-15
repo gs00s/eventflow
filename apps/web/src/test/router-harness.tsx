@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router';
 import { render } from '@testing-library/react';
 import { beforeEach, vi } from 'vitest';
@@ -12,6 +13,11 @@ export function setupRouterTest() {
   return async function renderApp(initialPath = '/') {
     const { createAppRouter } = await import('@/router');
     const router = createAppRouter(createMemoryHistory({ initialEntries: [initialPath] }));
-    return render(<RouterProvider router={router} />);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
   };
 }
