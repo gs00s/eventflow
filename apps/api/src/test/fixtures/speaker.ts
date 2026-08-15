@@ -1,7 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { Factory } from 'fishery';
-import type { auth } from '../auth/auth';
 
 export interface SpeakerRow {
   id: string;
@@ -22,14 +20,3 @@ export const speakerFactory = Factory.define<SpeakerRow>(() => ({
   createdAt: faker.date.past(),
   updatedAt: faker.date.recent(),
 }));
-
-export function sessionFor(overrides?: Partial<{ id: string; email: string; name: string }>) {
-  return {
-    user: {
-      id: faker.string.uuid(),
-      email: faker.internet.email(),
-      name: 'Jane Doe',
-      ...overrides,
-    },
-  } as UserSession<typeof auth>;
-}
