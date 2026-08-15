@@ -1,7 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DbService } from '../db/db.service';
-import { speakers } from '../db/schemas/speakers';
+import { speakers } from '../db/schemas';
 import { SpeakersModule } from './speakers.module';
 import { SpeakersRepository } from './speakers.repository';
 
