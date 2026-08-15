@@ -14,8 +14,10 @@ jobs:
         with:
           runtime: node@${{ steps.node-version.outputs.version }}
           cache: true
+      - run: pnpm audit --audit-level=high
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm fmt:check
       - run: pnpm test:unit
       - run: pnpm test:integration
+      - run: pnpm build
