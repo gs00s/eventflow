@@ -1,0 +1,19 @@
+name: Main Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - id: node-version
+        run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
+      - uses: pnpm/setup@v2
+        with:
+          runtime: node@${{ steps.node-version.outputs.version }}
+          cache: true
+      - run: pnpm build

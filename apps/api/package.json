@@ -8,8 +8,8 @@
     "start": "node dist/src/main",
     "lint": "oxlint",
     "typecheck": "tsc --noEmit",
-    "test:unit": "vitest run --config vitest.unit.config.mts",
-    "test:integration": "vitest run --config vitest.integration.config.mts",
+    "test:unit": "vitest run --config vitest.unit.config.mts --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.mts --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed.mts"
@@ -40,6 +40,7 @@
     "@types/node": "^24.0.0",
     "@types/pg": "^8.21.0",
     "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "4.1.10",
     "drizzle-kit": "^0.31.10",
     "fishery": "^2.4.0",
     "oxlint": "^1.78.0",
