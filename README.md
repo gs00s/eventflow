@@ -71,9 +71,10 @@ Run from the repo root, orchestrated across both apps via Turborepo:
 
 - `GET /speakers` reads from Postgres via Drizzle (`apps/api/src/db`). `apps/api/.env` needs `DATABASE_URL` — see `.env.example`.
 - Auth (`/api/auth/sign-up/email`, `/api/auth/sign-in/email`, `/api/auth/sign-out`) is handled by Better Auth directly; `GET /api/users/me` is the one hand-written endpoint, returning the current session's user.
+- Events, layouts, and registration (the PRD's core deliverable) are implemented: `GET /events` / `GET /events/:id` serve public event data with the recursive Section/Heading/Paragraph/SessionSchedule/SpeakerList layout tree; `GET /events/vip` / `GET /events/vip/:id` serve the same, VIP-inclusive, gated to signed-in VIP users (ADR 0003); `POST`/`DELETE`/`GET /events/:id/register` cover registration, status, and unregistration.
 - Integration tests spin up their own ephemeral Postgres via Testcontainers (`@testcontainers/postgresql`) — independent of the `docker-compose` instance used for interactive `pnpm dev`.
-- `apps/web` has a home page, a top nav (reflecting auth state via Better Auth's React client), a `/speakers` page, and `/login`, `/register`, `/profile` pages (the latter guarded, redirecting unauthenticated users to `/login`).
-- The events/layouts system (the PRD's core deliverable — flexible template-driven event pages, VIP-gating, registration) is not implemented yet.
+- `apps/web`'s homepage lists current events (public list for anonymous/regular users, VIP-inclusive for VIP users), each linking to a detail page that renders its layout tree and a register/unregister control. A top nav reflects auth state via Better Auth's React client, plus a `/speakers` page and `/login`, `/register`, `/profile` pages (the latter guarded, redirecting unauthenticated users to `/login`).
+- Event editing by organizer account (the PRD's optional requirement) is not implemented.
 
 ## Technology decisions
 
