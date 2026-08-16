@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Speaker, SpeakerDetail } from '@eventflow/shared-types';
+import type { Speaker, SpeakerEvent } from '@eventflow/shared-types';
 import { SpeakersRepository } from './speakers.repository';
 
 @Injectable()
@@ -12,22 +12,27 @@ export class SpeakersService {
     return rows.map(toSpeaker);
   }
 
-  async findById(id: string): Promise<SpeakerDetail | undefined> {
+  async findById(id: string): Promise<Speaker | undefined> {
     const row = await this.speakersRepository.findById(id);
     if (!row) return undefined;
 
-    const eventsById = new Map(
-      row.sessions.filter(({ event }) => !event.isVip).map(({ event }) => [event.id, event]),
-    );
+    return toSpeaker(row);
+  }
 
-    return {
-      ...toSpeaker(row),
-      events: [...eventsById.values()].map((event) => ({
-        id: event.id,
-        title: event.title,
-        date: event.date,
-      })),
-    };
+  exists(id: string): Promise<boolean> {
+    return this.speakersRepository.exists(id);
+  }
+
+  async findPublicEvents(speakerId: string): Promise<SpeakerEvent[]> {
+    const sessions = await this.speakersRepository.findEvents(speakerId);
+
+    return toSpeakerEvents(sessions.filter(({ event }) => !event.isVip));
+  }
+
+  async findAllEvents(speakerId: string): Promise<SpeakerEvent[]> {
+    const sessions = await this.speakersRepository.findEvents(speakerId);
+
+    return toSpeakerEvents(sessions);
   }
 }
 
@@ -45,4 +50,16 @@ function toSpeaker(row: {
     bio: row.bio,
     image: row.image,
   };
+}
+
+function toSpeakerEvents(
+  sessions: { event: { id: string; title: string; date: string } }[],
+): SpeakerEvent[] {
+  const eventsById = new Map(sessions.map(({ event }) => [event.id, event]));
+
+  return [...eventsById.values()].map((event) => ({
+    id: event.id,
+    title: event.title,
+    date: event.date,
+  }));
 }

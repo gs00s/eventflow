@@ -19,15 +19,10 @@ describe('SpeakersService', () => {
     ]);
   });
 
-  it('maps a detail row with its deduped linked events to a SpeakerDetail DTO', async () => {
+  it('maps a detail row to a speaker DTO', async () => {
     const row = speakerFactory.build();
-    const event = eventFactory.build();
-    const session = eventSessionFactory.build({ eventId: event.id, speakerId: row.id });
     const module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
-    vi.spyOn(module.get(SpeakersRepository), 'findById').mockResolvedValue({
-      ...row,
-      sessions: [{ ...session, event }],
-    });
+    vi.spyOn(module.get(SpeakersRepository), 'findById').mockResolvedValue(row);
     const service = module.get(SpeakersService);
 
     const result = await service.findById(row.id);
@@ -38,34 +33,7 @@ describe('SpeakersService', () => {
       title: row.title,
       bio: row.bio,
       image: row.image,
-      events: [{ id: event.id, title: event.title, date: event.date }],
     });
-  });
-
-  it('excludes VIP events from a speaker detail DTO', async () => {
-    const row = speakerFactory.build();
-    const publicEvent = eventFactory.build();
-    const vipEvent = eventFactory.build({ isVip: true });
-    const publicSession = eventSessionFactory.build({
-      eventId: publicEvent.id,
-      speakerId: row.id,
-    });
-    const vipSession = eventSessionFactory.build({ eventId: vipEvent.id, speakerId: row.id });
-    const module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
-    vi.spyOn(module.get(SpeakersRepository), 'findById').mockResolvedValue({
-      ...row,
-      sessions: [
-        { ...publicSession, event: publicEvent },
-        { ...vipSession, event: vipEvent },
-      ],
-    });
-    const service = module.get(SpeakersService);
-
-    const result = await service.findById(row.id);
-
-    expect(result?.events).toEqual([
-      { id: publicEvent.id, title: publicEvent.title, date: publicEvent.date },
-    ]);
   });
 
   it('returns undefined when the speaker is not found', async () => {
@@ -76,5 +44,51 @@ describe('SpeakersService', () => {
     const result = await service.findById('missing-id');
 
     expect(result).toBeUndefined();
+  });
+
+  it('excludes VIP events from the public events list, deduped', async () => {
+    const speaker = speakerFactory.build();
+    const publicEvent = eventFactory.build();
+    const vipEvent = eventFactory.build({ isVip: true });
+    const publicSession = eventSessionFactory.build({
+      eventId: publicEvent.id,
+      speakerId: speaker.id,
+    });
+    const vipSession = eventSessionFactory.build({ eventId: vipEvent.id, speakerId: speaker.id });
+    const module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
+    vi.spyOn(module.get(SpeakersRepository), 'findEvents').mockResolvedValue([
+      { ...publicSession, event: publicEvent },
+      { ...vipSession, event: vipEvent },
+    ]);
+    const service = module.get(SpeakersService);
+
+    const result = await service.findPublicEvents(speaker.id);
+
+    expect(result).toEqual([
+      { id: publicEvent.id, title: publicEvent.title, date: publicEvent.date },
+    ]);
+  });
+
+  it('includes VIP events in the full events list, deduped', async () => {
+    const speaker = speakerFactory.build();
+    const publicEvent = eventFactory.build();
+    const vipEvent = eventFactory.build({ isVip: true });
+    const publicSession = eventSessionFactory.build({
+      eventId: publicEvent.id,
+      speakerId: speaker.id,
+    });
+    const vipSession = eventSessionFactory.build({ eventId: vipEvent.id, speakerId: speaker.id });
+    const module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
+    vi.spyOn(module.get(SpeakersRepository), 'findEvents').mockResolvedValue([
+      { ...publicSession, event: publicEvent },
+      { ...vipSession, event: vipEvent },
+    ]);
+    const service = module.get(SpeakersService);
+
+    const result = await service.findAllEvents(speaker.id);
+
+    expect(result.map((event) => event.id)).toEqual(
+      expect.arrayContaining([publicEvent.id, vipEvent.id]),
+    );
   });
 });

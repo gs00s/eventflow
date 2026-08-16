@@ -3,14 +3,14 @@ import {
   eventDetailSchema,
   eventSchema,
   registrationStatusSchema,
-  speakerDetailSchema,
+  speakerEventSchema,
   speakerSchema,
   type CurrentUser,
   type Event,
   type EventDetail,
   type RegistrationStatus,
   type Speaker,
-  type SpeakerDetail,
+  type SpeakerEvent,
 } from '@eventflow/shared-types';
 
 export class ApiError extends Error {
@@ -28,10 +28,22 @@ export async function fetchSpeakers(): Promise<Speaker[]> {
   return speakerSchema.array().parse(await res.json());
 }
 
-export async function fetchSpeaker(id: string): Promise<SpeakerDetail> {
+export async function fetchSpeaker(id: string): Promise<Speaker> {
   const res = await fetch(`/api/speakers/${id}`);
   if (!res.ok) throw new ApiError(res.status, 'Failed to fetch speaker');
-  return speakerDetailSchema.parse(await res.json());
+  return speakerSchema.parse(await res.json());
+}
+
+export async function fetchSpeakerEvents(id: string): Promise<SpeakerEvent[]> {
+  const res = await fetch(`/api/speakers/${id}/events`);
+  if (!res.ok) throw new ApiError(res.status, 'Failed to fetch speaker events');
+  return speakerEventSchema.array().parse(await res.json());
+}
+
+export async function fetchSpeakerEventsVip(id: string): Promise<SpeakerEvent[]> {
+  const res = await fetch(`/api/speakers/${id}/events/vip`);
+  if (!res.ok) throw new ApiError(res.status, 'Failed to fetch speaker events');
+  return speakerEventSchema.array().parse(await res.json());
 }
 
 export async function fetchEvents(): Promise<Event[]> {

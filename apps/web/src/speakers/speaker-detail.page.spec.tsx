@@ -14,11 +14,11 @@ describe('SpeakerDetailPage', () => {
     const event = eventFactory.build();
     server.use(
       http.get('/api/speakers/:id', ({ params }) =>
+        params.id === speaker.id ? HttpResponse.json(speaker) : new HttpResponse(null, { status: 404 }),
+      ),
+      http.get('/api/speakers/:id/events', ({ params }) =>
         params.id === speaker.id
-          ? HttpResponse.json({
-              ...speaker,
-              events: [{ id: event.id, title: event.title, date: event.date }],
-            })
+          ? HttpResponse.json([{ id: event.id, title: event.title, date: event.date }])
           : new HttpResponse(null, { status: 404 }),
       ),
     );
@@ -32,7 +32,10 @@ describe('SpeakerDetailPage', () => {
 
   it('shows an error message when the request fails', async () => {
     server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
-    server.use(http.get('/api/speakers/:id', () => new HttpResponse(null, { status: 404 })));
+    server.use(
+      http.get('/api/speakers/:id', () => new HttpResponse(null, { status: 404 })),
+      http.get('/api/speakers/:id/events', () => new HttpResponse(null, { status: 404 })),
+    );
 
     await renderApp('/speakers/missing-id');
 
