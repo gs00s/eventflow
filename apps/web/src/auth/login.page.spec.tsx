@@ -21,6 +21,7 @@ describe('LoginPage', () => {
         signedIn = true;
         return HttpResponse.json({ redirect: false, token: 'test-token', user });
       }),
+      http.get('/api/events', () => HttpResponse.json([])),
     );
     await renderApp('/login');
     await screen.findByRole('heading', { name: 'Log in' });
