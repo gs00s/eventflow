@@ -2,12 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { layoutSchema, type Event, type EventDetail } from '@eventflow/shared-types';
 import type { events } from '../db/schemas';
 import { EventsRepository } from './events.repository';
+import { RegistrationsRepository } from './registrations.repository';
 
 type EventRow = typeof events.$inferSelect;
 
 @Injectable()
 export class EventsService {
-  constructor(private readonly eventsRepository: EventsRepository) {}
+  constructor(
+    private readonly eventsRepository: EventsRepository,
+    private readonly registrationsRepository: RegistrationsRepository,
+  ) {}
 
   async findPublic(): Promise<Event[]> {
     const rows = await this.eventsRepository.findPublic();
@@ -61,6 +65,22 @@ export class EventsService {
       // Re-validated here since jsonb has no DB-level shape enforcement — drizzle's $type<>() is compile-time only.
       layout: row.layout ? layoutSchema.parse(row.layout) : null,
     };
+  }
+
+  exists(id: string): Promise<boolean> {
+    return this.eventsRepository.exists(id);
+  }
+
+  isRegistered(eventId: string, userId: string): Promise<boolean> {
+    return this.registrationsRepository.existsForUser(userId, eventId);
+  }
+
+  register(userId: string, eventId: string): Promise<boolean> {
+    return this.registrationsRepository.create(userId, eventId);
+  }
+
+  unregister(userId: string, eventId: string): Promise<boolean> {
+    return this.registrationsRepository.delete(userId, eventId);
   }
 }
 

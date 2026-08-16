@@ -4,6 +4,7 @@ import { eventFactory, eventSessionFactory, layoutFactory, speakerFactory } from
 import { EventsModule } from './events.module';
 import { EventsRepository } from './events.repository';
 import { EventsService } from './events.service';
+import { RegistrationsRepository } from './registrations.repository';
 
 describe('EventsService', () => {
   it('maps public repository rows to event DTOs', async () => {
@@ -145,5 +146,55 @@ describe('EventsService', () => {
     const result = await service.findById('missing-id');
 
     expect(result).toBeUndefined();
+  });
+
+  it('creates a registration for the viewer and event', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(RegistrationsRepository), 'create').mockResolvedValueOnce(true);
+    const service = module.get(EventsService);
+
+    const result = await service.register('viewer-id', 'event-id');
+
+    expect(result).toBe(true);
+  });
+
+  it('reports a failed registration when one already exists', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(RegistrationsRepository), 'create').mockResolvedValueOnce(false);
+    const service = module.get(EventsService);
+
+    const result = await service.register('viewer-id', 'event-id');
+
+    expect(result).toBe(false);
+  });
+
+  it('reports whether a viewer is registered for an event', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(RegistrationsRepository), 'existsForUser').mockResolvedValueOnce(true);
+    const service = module.get(EventsService);
+
+    const result = await service.isRegistered('event-id', 'viewer-id');
+
+    expect(result).toBe(true);
+  });
+
+  it('deletes a registration for the viewer and event', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(RegistrationsRepository), 'delete').mockResolvedValueOnce(true);
+    const service = module.get(EventsService);
+
+    const result = await service.unregister('viewer-id', 'event-id');
+
+    expect(result).toBe(true);
+  });
+
+  it('reports a failed unregister when no registration exists', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(RegistrationsRepository), 'delete').mockResolvedValueOnce(false);
+    const service = module.get(EventsService);
+
+    const result = await service.unregister('viewer-id', 'event-id');
+
+    expect(result).toBe(false);
   });
 });

@@ -192,6 +192,12 @@ export const eventDetailSchema = eventSchema.extend({
 
 export type EventDetail = z.infer<typeof eventDetailSchema>;
 
+export const registrationStatusSchema = z.object({
+  isRegistered: z.boolean(),
+});
+
+export type RegistrationStatus = z.infer<typeof registrationStatusSchema>;
+
 export const speakerEventSchema = z.object({
   id: z.string(),
   title: z.string(),

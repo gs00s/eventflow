@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
+import { EventRegistration } from './components/event-registration';
 import { ApiError, fetchEvent, fetchEventVip } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
 import { buildFallbackLayout } from './layout/fallback-layout';
@@ -34,6 +35,10 @@ export function EventDetailPage() {
             {data.date} · {data.location.venue}, {data.location.city}
           </p>
           <p className="mt-4">{data.description}</p>
+
+          <div className="mt-4">
+            <EventRegistration eventId={eventId} />
+          </div>
 
           <div className="mt-8 space-y-8">
             <LayoutRenderer

@@ -26,4 +26,14 @@ export class EventsRepository {
       },
     });
   }
+
+  async exists(id: string) {
+    const rows = await this.dbService.db
+      .select({ id: events.id })
+      .from(events)
+      .where(eq(events.id, id))
+      .limit(1);
+
+    return rows.length > 0;
+  }
 }

@@ -4,6 +4,7 @@ export * from './event-relations';
 export * from './event-sessions';
 export * from './events';
 export * from './layouts';
+export * from './registrations';
 export * from './session';
 export * from './speakers';
 export * from './user';
