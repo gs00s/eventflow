@@ -1,6 +1,6 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { user } from '../db/schemas';
 import { createTestApp } from '../test/app-harness';
 import { clearTable } from '../test/db';
@@ -54,9 +54,6 @@ describe('Auth (integration)', () => {
     });
 
     it('rejects a password shorter than the minimum length', async () => {
-      // Better Auth warns internally on this rejection path.
-      vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       const response = await request(app.getHttpServer()).post('/api/auth/sign-up/email').send({
         email: 'register-shortpw@example.com',
         password: 'short',
@@ -95,9 +92,6 @@ describe('Auth (integration)', () => {
     });
 
     it('rejects an incorrect password', async () => {
-      // Better Auth warns internally on this rejection path.
-      vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       const response = await request(app.getHttpServer()).post('/api/auth/sign-in/email').send({
         email: credentials.email,
         password: 'the-wrong-password',
@@ -107,9 +101,6 @@ describe('Auth (integration)', () => {
     });
 
     it('rejects an unknown email', async () => {
-      // Better Auth warns internally on this rejection path.
-      vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       const response = await request(app.getHttpServer()).post('/api/auth/sign-in/email').send({
         email: 'no-such-user@example.com',
         password: 'password1234',
