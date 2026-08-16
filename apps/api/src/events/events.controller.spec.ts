@@ -122,9 +122,9 @@ describe('EventsController', () => {
     });
     const controller = module.get(EventsController);
 
-    await expect(
-      controller.findOneVip(event.id, sessionFor({ isVip: true })),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(controller.findOneVip(event.id, sessionFor({ isVip: true }))).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('reports whether the viewer is registered for an event', async () => {
@@ -153,9 +153,9 @@ describe('EventsController', () => {
     vi.spyOn(module.get(EventsRepository), 'findVipFlag').mockResolvedValueOnce(true);
     const controller = module.get(EventsController);
 
-    await expect(
-      controller.register(event.id, sessionFor({ isVip: false })),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(controller.register(event.id, sessionFor({ isVip: false }))).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('throws ConflictException registering for an event the viewer already registered for', async () => {

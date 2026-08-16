@@ -14,7 +14,9 @@ describe('SpeakerDetailPage', () => {
     const event = eventFactory.build();
     server.use(
       http.get('/api/speakers/:id', ({ params }) =>
-        params.id === speaker.id ? HttpResponse.json(speaker) : new HttpResponse(null, { status: 404 }),
+        params.id === speaker.id
+          ? HttpResponse.json(speaker)
+          : new HttpResponse(null, { status: 404 }),
       ),
       http.get('/api/speakers/:id/events', ({ params }) =>
         params.id === speaker.id

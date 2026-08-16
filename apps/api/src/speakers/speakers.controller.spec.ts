@@ -81,9 +81,9 @@ describe('SpeakersController', () => {
     const module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
     const controller = module.get(SpeakersController);
 
-    await expect(
-      controller.findEventsVip('some-id', sessionFor({ isVip: false })),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(controller.findEventsVip('some-id', sessionFor({ isVip: false }))).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('throws NotFoundException listing VIP events for a speaker that does not exist', async () => {
