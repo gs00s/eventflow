@@ -65,4 +65,10 @@ describe('SpeakersRepository (integration)', () => {
       expect.arrayContaining([event.id, vipEvent.id]),
     );
   });
+
+  it('excludes VIP events from the public events query', async () => {
+    const result = await repository.findPublicEvents(speaker.id);
+
+    expect(result.map((row) => row.event.id)).toEqual([event.id]);
+  });
 });

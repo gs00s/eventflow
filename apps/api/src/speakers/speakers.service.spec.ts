@@ -46,27 +46,19 @@ describe('SpeakersService', () => {
     expect(result).toBeUndefined();
   });
 
-  it('excludes VIP events from the public events list, deduped', async () => {
+  it('maps and dedupes the public events returned by the repository', async () => {
     const speaker = speakerFactory.build();
-    const publicEvent = eventFactory.build();
-    const vipEvent = eventFactory.build({ isVip: true });
-    const publicSession = eventSessionFactory.build({
-      eventId: publicEvent.id,
-      speakerId: speaker.id,
-    });
-    const vipSession = eventSessionFactory.build({ eventId: vipEvent.id, speakerId: speaker.id });
+    const event = eventFactory.build();
     const module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
-    vi.spyOn(module.get(SpeakersRepository), 'findEvents').mockResolvedValue([
-      { ...publicSession, event: publicEvent },
-      { ...vipSession, event: vipEvent },
+    vi.spyOn(module.get(SpeakersRepository), 'findPublicEvents').mockResolvedValue([
+      { event },
+      { event },
     ]);
     const service = module.get(SpeakersService);
 
     const result = await service.findPublicEvents(speaker.id);
 
-    expect(result).toEqual([
-      { id: publicEvent.id, title: publicEvent.title, date: publicEvent.date },
-    ]);
+    expect(result).toEqual([{ id: event.id, title: event.title, date: event.date }]);
   });
 
   it('includes VIP events in the full events list, deduped', async () => {
