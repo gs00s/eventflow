@@ -9,7 +9,7 @@ Requirements: [`docs/prds/`](docs/prds/). Architecture/stack rationale: [`docs/a
 ### Prerequisites
 
 - Node `24.19.0` — `.nvmrc` is checked in; run `nvm use`
-- pnpm `11.21.0` via Corepack — `corepack enable && corepack prepare pnpm@11.21.0 --activate` (or just run `pnpm install`, the `packageManager` field in `package.json` pins the version for you)
+- pnpm `11.21.0` via Corepack — just run `pnpm install`, the `packageManager` field in `package.json` pins the version for you
 
 ### Install
 
@@ -20,14 +20,14 @@ pnpm install
 ### Database
 
 ```sh
-docker compose up -d          # local Postgres (postgres:18-alpine)
+docker compose up -d
 cp apps/api/.env.example apps/api/.env
 cd apps/api
-pnpm db:migrate               # create tables
-pnpm db:seed                  # seed from docs/prds/speakers.mock.json
+pnpm db:migrate
+pnpm db:seed
 ```
 
-Seeding also creates two demo accounts (idempotent — safe to re-run):
+Seeding also creates two demo accounts:
 
 | Email              | Password       | Role                                     |
 | ------------------ | -------------- | ---------------------------------------- |
@@ -43,9 +43,7 @@ pnpm dev
 Starts both apps in parallel via Turborepo:
 
 - **API** — NestJS on Express, http://localhost:9000
-- **Web** — Vite dev server, http://localhost:7000, proxying `/api` to the API (mirrors the Firebase Hosting → Cloud Run rewrite used in production)
-
-Verify: `curl http://localhost:7000/api/speakers`
+- **Web** — Vite dev server, http://localhost:7000, proxying `/api` to the API
 
 ### Scripts
 
