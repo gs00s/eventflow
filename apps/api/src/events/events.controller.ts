@@ -40,6 +40,7 @@ export class EventsController {
 
     const event = await this.eventsService.findById(id);
     if (!event) throw new NotFoundException();
+    if (!event.isVip) throw new ForbiddenException();
 
     return event;
   }
@@ -69,8 +70,9 @@ export class EventsController {
     @Param('id') id: string,
     @Session() session: UserSession<typeof auth>,
   ): Promise<void> {
-    const eventExists = await this.eventsService.exists(id);
-    if (!eventExists) throw new NotFoundException();
+    const isVip = await this.eventsService.findVipFlag(id);
+    if (isVip === undefined) throw new NotFoundException();
+    if (isVip && !session.user.isVip) throw new ForbiddenException();
 
     const created = await this.eventsService.register(session.user.id, id);
     if (!created) throw new ConflictException();

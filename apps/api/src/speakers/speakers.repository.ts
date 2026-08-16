@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
-import { speakers } from '../db/schemas';
+import { eventSessions, speakers } from '../db/schemas';
 
 @Injectable()
 export class SpeakersRepository {
@@ -14,11 +14,23 @@ export class SpeakersRepository {
   findById(id: string) {
     return this.dbService.db.query.speakers.findFirst({
       where: eq(speakers.id, id),
-      with: {
-        sessions: {
-          with: { event: true },
-        },
-      },
+    });
+  }
+
+  async exists(id: string) {
+    const rows = await this.dbService.db
+      .select({ id: speakers.id })
+      .from(speakers)
+      .where(eq(speakers.id, id))
+      .limit(1);
+
+    return rows.length > 0;
+  }
+
+  findEvents(speakerId: string) {
+    return this.dbService.db.query.eventSessions.findMany({
+      where: eq(eventSessions.speakerId, speakerId),
+      with: { event: true },
     });
   }
 }

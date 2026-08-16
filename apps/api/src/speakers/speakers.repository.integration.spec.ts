@@ -11,7 +11,9 @@ describe('SpeakersRepository (integration)', () => {
   let repository: SpeakersRepository;
   const speaker = speakerFactory.build();
   const event = eventFactory.build();
+  const vipEvent = eventFactory.build({ isVip: true });
   const session = eventSessionFactory.build({ eventId: event.id, speakerId: speaker.id });
+  const vipSession = eventSessionFactory.build({ eventId: vipEvent.id, speakerId: speaker.id });
 
   beforeAll(async () => {
     module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
@@ -22,8 +24,8 @@ describe('SpeakersRepository (integration)', () => {
     await dbService.db.delete(events);
     await dbService.db.delete(speakers);
     await dbService.db.insert(speakers).values(speaker);
-    await dbService.db.insert(events).values(event);
-    await dbService.db.insert(eventSessions).values(session);
+    await dbService.db.insert(events).values([event, vipEvent]);
+    await dbService.db.insert(eventSessions).values([session, vipSession]);
   });
 
   afterAll(async () => {
@@ -36,18 +38,31 @@ describe('SpeakersRepository (integration)', () => {
     expect(result).toEqual([expect.objectContaining({ name: speaker.name })]);
   });
 
-  it('returns a speaker with its sessions and their linked events', async () => {
+  it('returns a speaker by id', async () => {
     const result = await repository.findById(speaker.id);
 
-    expect(result).toMatchObject({
-      name: speaker.name,
-      sessions: [expect.objectContaining({ event: expect.objectContaining({ id: event.id }) })],
-    });
+    expect(result).toMatchObject({ name: speaker.name });
   });
 
   it('returns undefined for an unknown speaker id', async () => {
     const result = await repository.findById('00000000-0000-0000-0000-000000000000');
 
     expect(result).toBeUndefined();
+  });
+
+  it('reports whether a speaker id exists', async () => {
+    const found = await repository.exists(speaker.id);
+    const notFound = await repository.exists('00000000-0000-0000-0000-000000000000');
+
+    expect(found).toBe(true);
+    expect(notFound).toBe(false);
+  });
+
+  it('returns every session with its linked event, VIP included', async () => {
+    const result = await repository.findEvents(speaker.id);
+
+    expect(result.map((row) => row.event.id)).toEqual(
+      expect.arrayContaining([event.id, vipEvent.id]),
+    );
   });
 });

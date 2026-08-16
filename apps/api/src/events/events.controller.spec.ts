@@ -112,6 +112,21 @@ describe('EventsController', () => {
     expect(result.id).toBe(event.id);
   });
 
+  it('throws ForbiddenException fetching a non-VIP event via the VIP route', async () => {
+    const event = eventFactory.build({ isVip: false });
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findById').mockResolvedValueOnce({
+      ...event,
+      sessions: [],
+      layout: null,
+    });
+    const controller = module.get(EventsController);
+
+    await expect(controller.findOneVip(event.id, sessionFor({ isVip: true }))).rejects.toThrow(
+      ForbiddenException,
+    );
+  });
+
   it('reports whether the viewer is registered for an event', async () => {
     const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
     vi.spyOn(module.get(RegistrationsRepository), 'existsForUser').mockResolvedValueOnce(true);
@@ -124,7 +139,7 @@ describe('EventsController', () => {
 
   it('throws NotFoundException registering for an event that does not exist', async () => {
     const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
-    vi.spyOn(module.get(EventsRepository), 'exists').mockResolvedValueOnce(false);
+    vi.spyOn(module.get(EventsRepository), 'findVipFlag').mockResolvedValueOnce(undefined);
     const controller = module.get(EventsController);
 
     await expect(controller.register('missing-id', sessionFor())).rejects.toThrow(
@@ -132,10 +147,21 @@ describe('EventsController', () => {
     );
   });
 
+  it('throws ForbiddenException registering a non-VIP viewer for a VIP event', async () => {
+    const event = eventFactory.build({ isVip: true });
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findVipFlag').mockResolvedValueOnce(true);
+    const controller = module.get(EventsController);
+
+    await expect(controller.register(event.id, sessionFor({ isVip: false }))).rejects.toThrow(
+      ForbiddenException,
+    );
+  });
+
   it('throws ConflictException registering for an event the viewer already registered for', async () => {
     const event = eventFactory.build();
     const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
-    vi.spyOn(module.get(EventsRepository), 'exists').mockResolvedValueOnce(true);
+    vi.spyOn(module.get(EventsRepository), 'findVipFlag').mockResolvedValueOnce(false);
     vi.spyOn(module.get(RegistrationsRepository), 'create').mockResolvedValueOnce(false);
     const controller = module.get(EventsController);
 
@@ -145,11 +171,23 @@ describe('EventsController', () => {
   it('registers the viewer for an event', async () => {
     const event = eventFactory.build();
     const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
-    vi.spyOn(module.get(EventsRepository), 'exists').mockResolvedValueOnce(true);
+    vi.spyOn(module.get(EventsRepository), 'findVipFlag').mockResolvedValueOnce(false);
     vi.spyOn(module.get(RegistrationsRepository), 'create').mockResolvedValueOnce(true);
     const controller = module.get(EventsController);
 
     await expect(controller.register(event.id, sessionFor())).resolves.toBeUndefined();
+  });
+
+  it('registers a VIP viewer for a VIP event', async () => {
+    const event = eventFactory.build({ isVip: true });
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findVipFlag').mockResolvedValueOnce(true);
+    vi.spyOn(module.get(RegistrationsRepository), 'create').mockResolvedValueOnce(true);
+    const controller = module.get(EventsController);
+
+    await expect(
+      controller.register(event.id, sessionFor({ isVip: true })),
+    ).resolves.toBeUndefined();
   });
 
   it('throws NotFoundException unregistering when no registration exists', async () => {

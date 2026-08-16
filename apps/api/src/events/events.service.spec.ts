@@ -148,6 +148,16 @@ describe('EventsService', () => {
     expect(result).toBeUndefined();
   });
 
+  it('reports an event id VIP flag', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findVipFlag').mockResolvedValueOnce(true);
+    const service = module.get(EventsService);
+
+    const result = await service.findVipFlag('event-id');
+
+    expect(result).toBe(true);
+  });
+
   it('creates a registration for the viewer and event', async () => {
     const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
     vi.spyOn(module.get(RegistrationsRepository), 'create').mockResolvedValueOnce(true);

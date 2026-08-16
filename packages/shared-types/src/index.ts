@@ -205,9 +205,3 @@ export const speakerEventSchema = z.object({
 });
 
 export type SpeakerEvent = z.infer<typeof speakerEventSchema>;
-
-export const speakerDetailSchema = speakerSchema.extend({
-  events: speakerEventSchema.array(),
-});
-
-export type SpeakerDetail = z.infer<typeof speakerDetailSchema>;

@@ -67,11 +67,13 @@ describe('EventsRepository (integration)', () => {
     expect(result).toBeUndefined();
   });
 
-  it('reports whether an event id exists', async () => {
-    const found = await repository.exists(event.id);
-    const notFound = await repository.exists('00000000-0000-0000-0000-000000000000');
+  it('reports an event id VIP flag', async () => {
+    const nonVip = await repository.findVipFlag(event.id);
+    const vip = await repository.findVipFlag(vipEvent.id);
+    const notFound = await repository.findVipFlag('00000000-0000-0000-0000-000000000000');
 
-    expect(found).toBe(true);
-    expect(notFound).toBe(false);
+    expect(nonVip).toBe(false);
+    expect(vip).toBe(true);
+    expect(notFound).toBeUndefined();
   });
 });
