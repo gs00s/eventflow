@@ -2,7 +2,7 @@
 
 ## Required reading
 
-Before architectural or dependency decisions, check `docs/prds/` (requirements) and `docs/adrs/` (accepted decisions). New ADRs go in `docs/adrs/`, numbered sequentially (`000N-title.md`); flag rather than silently deviate from an accepted one.
+Check `docs/prds/` (requirements) and `docs/adrs/` (accepted decisions) before architectural/dependency choices. New ADRs: `docs/adrs/000N-title.md`, sequential; flag rather than silently deviate from an accepted one.
 
 ## Issue tracking
 
@@ -10,48 +10,53 @@ Issues live in GitHub's Issues tab (`gs00s/eventflow`), not local files. Every b
 
 ## Git commits, branches, and PRs
 
-All follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat`, `fix`, `chore`, `docs`, etc.), scoped to the issue id:
+[Conventional Commits](https://www.conventionalcommits.org/) (`feat`, `fix`, `chore`, `docs`, etc.), scoped to the issue id:
 
 - **Branch**: `<type>/<issue-id>-<slug>`, e.g. `docs/1-record-stack-and-repo-structure-design-decisions`
 - **PR title**: `<type>(<issue-id>): <description>`, e.g. `docs(1): record stack and repo structure design decisions`
 - **Commit message**: same format as the PR title — the scope already identifies the issue, skip repeating it in the body
 
-Never add a `Co-Authored-By: Claude` trailer, or any other self-attribution, to commit messages.
+Never add a `Co-Authored-By: Claude` trailer or other self-attribution.
 
 ## Engineering principles
 
-- **Official docs first.** Implement a new technology or library the way its official docs show, not from memory or blog-post patterns. Check current docs before wiring something in.
-- **Minimalism.** Fewer moving parts, less code. Smallest solution that satisfies the requirement, not the most "complete" one — no abstraction, config, or dependency the current scope doesn't need.
-- **Latest versions.** Always the latest stable language/runtime/package version — update the environment rather than pin to an older one to dodge a local mismatch.
-- **No unnecessary comments.** Default to none. Only add one when the WHY is non-obvious (a hidden constraint, a workaround, invisible default behavior) — never to restate what the code/config already says. When one is warranted, keep it to one concise line, not a multi-line block.
-- **Never read `process.env` outside `src/env.ts`.** One Zod schema, consumed via `env.X` elsewhere. Validates lazily (`Proxy`, not eager `.parse()`) — decorator-metadata forces DI classes like `DbService` into real imports, so eager validation would crash unit tests that never construct one. Exception: test setup that _writes_ `process.env.X` for `env.ts` to read (e.g. `testcontainers-setup-file.ts`).
+- **Official docs first** — implement new tech/libraries the way their docs show, not from memory or blog patterns; check current docs before wiring something in.
+- **Minimalism** — smallest solution that satisfies the requirement, not the most "complete" one; no abstraction, config, or dependency the current scope doesn't need.
+- **Latest versions** — latest stable language/runtime/package version; update the environment rather than pin old to dodge a local mismatch.
+- **No unnecessary comments** — default to none; only when the WHY is non-obvious (hidden constraint, workaround, invisible default), never to restate the code. One concise line, not a block.
+- **Never read `process.env` outside `src/env.ts`** — one Zod schema, consumed via `env.X` elsewhere. Validates lazily (`Proxy`, not eager `.parse()`) — decorator metadata forces DI classes like `DbService` into real imports, so eager validation would crash unit tests that never construct one. Exception: test setup that _writes_ `process.env.X` for `env.ts` to read (e.g. `testcontainers-setup-file.ts`).
 
 ## Backend layering
 
 `Controller → Service → Repository → DbService`, per resource:
 
 - **Repository** — only layer touching Drizzle/the database, returns raw rows.
-- **Service** — owns DTO transformation. Never return raw database models from an endpoint, even when the mapping is 1:1. Real business logic (filtering, computed fields, validation) lives here too.
+- **Service** — owns DTO transformation (never return raw DB models, even 1:1) and real business logic (filtering, computed fields, validation).
 - **Controller** — thin, delegates to the service.
+
+## Frontend layering
+
+`apps/web/src` organized by domain — `auth/`, `events/`, `speakers/`, `users/`:
+
+- Each domain owns its `*.page.tsx` routes and a `components/` folder; `events/` also owns `layout/`, the registry-driven renderer for the PRD's recursive layout tree (`Section`, `Heading`, `Paragraph`, `SessionSchedule`/`SessionCard`, `SpeakerList`/`SpeakerCard`).
+- Cross-cutting: top-level `components/` (`Nav`, `RootLayout`, shadcn `ui/`) and `lib/` (`api.ts`, `auth-client.ts`, `utils.ts`) — the only things a domain may import beyond its own subtree.
+- No cross-domain imports between `events/`, `speakers/`, `auth/`, `users/`.
 
 ## Database migrations
 
-Always generate with an explicit name (`drizzle-kit generate --name=<snake_case_description>`, e.g. `create_speakers_table`) — never accept drizzle-kit's random adjective-noun default (`0000_cloudy_oracle.sql`). The name is the only human-readable trace of what a migration does; the SQL body doesn't say it.
+Generate with an explicit name (`drizzle-kit generate --name=<snake_case_description>`, e.g. `create_speakers_table`) — never accept drizzle-kit's random default (`0000_cloudy_oracle.sql`); the name is the only human-readable trace of what a migration does.
 
 ## Testing conventions
 
-**File conventions**: co-locate specs with the code they test — no `test/`/`__tests__/` directories, even for integration tests. `.spec.` everywhere, never `.test.`.
+Co-locate specs with the code they test, `.spec.` everywhere (never `.test.`), no `test/`/`__tests__/` dirs. Bodies follow Arrange / Act / Assert, blank-line separated, no comment labels; capture the act result in a variable and assert on that rather than chaining off the call, unless there's nothing to separate (e.g. `expect(fn()).toThrow()`).
 
-**Test body shape**: Arrange / Act / Assert, separated by blank lines, no comment labels. Capture the act phase's result in a variable and assert on that, rather than chaining off the call — unless there's genuinely nothing to separate (e.g. `expect(fn()).toThrow()`).
+**Backend layering & mocking**:
 
-**Layering & mocking**:
+- **Repositories are integration-tested only** — a passthrough like `return db.select().from(table)` has no logic to unit-test; real Postgres (Testcontainers) covers it.
+- **Services/controllers are unit-tested by spying on the repository, never the service** — spying one layer lower means a controller test also exercises real service logic.
+- **Build via `Test.createTestingModule({ imports: [ResourceModule] })`**, never `new ClassUnderTest(...)` — `module.get()` reaches every provider in the compiled graph. `vi.spyOn(module.get(ResourceRepository), 'method')`, then `module.get()` whatever's under test.
+- **Pair unit coverage with one integration test per resource**, happy path end-to-end.
 
-- **Repositories are integration-tested only.** A passthrough like `return db.select().from(table)` has no logic to unit-test — mocking Drizzle's builder just echoes the mock back. Real Postgres (Testcontainers) covers it.
-- **Services and controllers are unit-tested by spying on the repository, never the service.** Spying one layer lower means a controller test also exercises the real service logic — only DB I/O is ever faked.
-- **Build via `Test.createTestingModule({ imports: [ResourceModule] })`**, never `new ClassUnderTest(...)` or manually re-listing providers — `module.get()` reaches every provider in the compiled graph, exported or not. `vi.spyOn(module.get(ResourceRepository), 'method')`, then `module.get()` whatever's under test.
-- **Pair unit coverage with one integration test per resource** covering the happy path end-to-end (real DB, repository, service, controller).
+**Integration infrastructure**: unit tests load env from `apps/api/.env.test` (fake-but-valid, just enough for `env.ts`'s Zod check — no query ever runs). Integration files share one Testcontainers Postgres (`globalSetup`), run sequentially (`fileParallelism: false`) — random PKs mean `onConflictDoNothing()` won't dedupe across files, so each spec clears its own table(s) in `beforeAll`.
 
-**Integration test infrastructure**:
-
-- **Unit tests load env vars from `apps/api/.env.test`** (via `vitest.setup.ts` → `setupFiles`), not the shell or the real `.env` — fake-but-valid values, just enough to satisfy `env.ts`'s Zod check when `DbService` is constructed; no query ever runs.
-- **Integration files share one Testcontainers Postgres** (`globalSetup`) and run sequentially (`fileParallelism: false`) — random PKs (`defaultRandom()`) mean `onConflictDoNothing()` won't dedupe across files, so each spec clears its own table(s) in `beforeAll`.
+**Frontend (`apps/web`)**: default is integration-style — real router + real TanStack Query (`setupRouterTest()`/`renderApp()`), mocking only the HTTP boundary with MSW; never mock a hook, child component, or `authClient` directly. Isolated `render()` unit tests only for pure prop/callback-driven "dumb" components with no data-fetching or router dependency (e.g. `LoginForm`/`RegisterForm`).
