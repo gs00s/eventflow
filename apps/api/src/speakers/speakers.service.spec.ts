@@ -42,6 +42,32 @@ describe('SpeakersService', () => {
     });
   });
 
+  it('excludes VIP events from a speaker detail DTO', async () => {
+    const row = speakerFactory.build();
+    const publicEvent = eventFactory.build();
+    const vipEvent = eventFactory.build({ isVip: true });
+    const publicSession = eventSessionFactory.build({
+      eventId: publicEvent.id,
+      speakerId: row.id,
+    });
+    const vipSession = eventSessionFactory.build({ eventId: vipEvent.id, speakerId: row.id });
+    const module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
+    vi.spyOn(module.get(SpeakersRepository), 'findById').mockResolvedValue({
+      ...row,
+      sessions: [
+        { ...publicSession, event: publicEvent },
+        { ...vipSession, event: vipEvent },
+      ],
+    });
+    const service = module.get(SpeakersService);
+
+    const result = await service.findById(row.id);
+
+    expect(result?.events).toEqual([
+      { id: publicEvent.id, title: publicEvent.title, date: publicEvent.date },
+    ]);
+  });
+
   it('returns undefined when the speaker is not found', async () => {
     const module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
     vi.spyOn(module.get(SpeakersRepository), 'findById').mockResolvedValue(undefined);

@@ -27,13 +27,13 @@ export class EventsRepository {
     });
   }
 
-  async exists(id: string) {
+  async findVipFlag(id: string): Promise<boolean | undefined> {
     const rows = await this.dbService.db
-      .select({ id: events.id })
+      .select({ isVip: events.isVip })
       .from(events)
       .where(eq(events.id, id))
       .limit(1);
 
-    return rows.length > 0;
+    return rows[0]?.isVip;
   }
 }

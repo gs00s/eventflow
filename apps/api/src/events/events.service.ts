@@ -67,8 +67,8 @@ export class EventsService {
     };
   }
 
-  exists(id: string): Promise<boolean> {
-    return this.eventsRepository.exists(id);
+  findVipFlag(id: string): Promise<boolean | undefined> {
+    return this.eventsRepository.findVipFlag(id);
   }
 
   isRegistered(eventId: string, userId: string): Promise<boolean> {

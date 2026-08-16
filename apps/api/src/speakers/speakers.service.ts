@@ -16,7 +16,9 @@ export class SpeakersService {
     const row = await this.speakersRepository.findById(id);
     if (!row) return undefined;
 
-    const eventsById = new Map(row.sessions.map(({ event }) => [event.id, event]));
+    const eventsById = new Map(
+      row.sessions.filter(({ event }) => !event.isVip).map(({ event }) => [event.id, event]),
+    );
 
     return {
       ...toSpeaker(row),
