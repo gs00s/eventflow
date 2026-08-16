@@ -9,7 +9,10 @@ const renderApp = setupRouterTest();
 
 describe('Nav', () => {
   it('renders links to Home and Speakers, highlighting the active one', async () => {
-    server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
+    server.use(
+      http.get('/api/auth/get-session', () => HttpResponse.json(null)),
+      http.get('/api/events', () => HttpResponse.json([])),
+    );
     await renderApp('/');
     await screen.findByRole('link', { name: 'Home' });
 
@@ -21,7 +24,10 @@ describe('Nav', () => {
   });
 
   it('shows login and register links when logged out', async () => {
-    server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
+    server.use(
+      http.get('/api/auth/get-session', () => HttpResponse.json(null)),
+      http.get('/api/events', () => HttpResponse.json([])),
+    );
     await renderApp('/');
     await screen.findByRole('link', { name: 'Home' });
 
@@ -33,6 +39,7 @@ describe('Nav', () => {
   it('shows an avatar with initials instead of login/register when logged in', async () => {
     server.use(
       http.get('/api/auth/get-session', () => HttpResponse.json(sessionFor(userFactory.build()))),
+      http.get('/api/events', () => HttpResponse.json([])),
     );
     await renderApp('/');
     await screen.findByRole('link', { name: 'Home' });

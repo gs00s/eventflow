@@ -23,7 +23,7 @@ Never add a `Co-Authored-By: Claude` trailer, or any other self-attribution, to 
 - **Official docs first.** Implement a new technology or library the way its official docs show, not from memory or blog-post patterns. Check current docs before wiring something in.
 - **Minimalism.** Fewer moving parts, less code. Smallest solution that satisfies the requirement, not the most "complete" one — no abstraction, config, or dependency the current scope doesn't need.
 - **Latest versions.** Always the latest stable language/runtime/package version — update the environment rather than pin to an older one to dodge a local mismatch.
-- **No unnecessary comments.** Default to none. Only add one when the WHY is non-obvious (a hidden constraint, a workaround, invisible default behavior) — never to restate what the code/config already says.
+- **No unnecessary comments.** Default to none. Only add one when the WHY is non-obvious (a hidden constraint, a workaround, invisible default behavior) — never to restate what the code/config already says. When one is warranted, keep it to one concise line, not a multi-line block.
 - **Never read `process.env` outside `src/env.ts`.** One Zod schema, consumed via `env.X` elsewhere. Validates lazily (`Proxy`, not eager `.parse()`) — decorator-metadata forces DI classes like `DbService` into real imports, so eager validation would crash unit tests that never construct one. Exception: test setup that _writes_ `process.env.X` for `env.ts` to read (e.g. `testcontainers-setup-file.ts`).
 
 ## Backend layering

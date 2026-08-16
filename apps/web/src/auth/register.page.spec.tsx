@@ -21,6 +21,7 @@ describe('RegisterPage', () => {
         signedIn = true;
         return HttpResponse.json({ token: 'test-token', user });
       }),
+      http.get('/api/events', () => HttpResponse.json([])),
     );
     await renderApp('/register');
     await screen.findByRole('heading', { name: 'Register' });
