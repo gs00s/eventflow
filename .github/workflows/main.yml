@@ -1,10 +1,12 @@
-name: PR Checks
+name: Main Build
 
 on:
-  pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
-  checks:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -14,10 +16,4 @@ jobs:
         with:
           runtime: node@${{ steps.node-version.outputs.version }}
           cache: true
-      - run: pnpm audit --audit-level=high
-      - run: pnpm typecheck
-      - run: pnpm lint
-      - run: pnpm fmt:check
-      - run: pnpm test:unit -- --coverage
-      - run: pnpm test:integration -- --coverage
       - run: pnpm build

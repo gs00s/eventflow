@@ -5,6 +5,10 @@ export default defineConfig({
   test: {
     exclude: [...configDefaults.exclude, '**/*.integration.spec.ts'],
     setupFiles: ['./vitest.setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: './coverage/unit',
+    },
   },
   plugins: [
     swc.vite({

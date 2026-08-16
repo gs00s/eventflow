@@ -9,6 +9,10 @@ export default defineConfig({
     hookTimeout: 60_000,
     testTimeout: 60_000,
     fileParallelism: false,
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: './coverage/integration',
+    },
   },
   plugins: [
     swc.vite({
