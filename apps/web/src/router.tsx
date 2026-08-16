@@ -11,7 +11,6 @@ import { LoginPage } from '@/auth/login.page';
 import { RegisterPage } from '@/auth/register.page';
 import { EventDetailPage } from '@/events/event-detail.page';
 import { EventsPage } from '@/events/events.page';
-import { HomePage } from '@/home.page';
 import { SpeakerDetailPage } from '@/speakers/speaker-detail.page';
 import { SpeakersPage } from '@/speakers/speakers.page';
 import { ProfilePage } from '@/users/profile.page';
@@ -21,12 +20,6 @@ const rootRoute = createRootRoute({ component: RootLayout });
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: HomePage,
-});
-
-const eventsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/events',
   component: EventsPage,
 });
 
@@ -80,7 +73,6 @@ const profileRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
-  eventsRoute,
   eventDetailRoute,
   speakersRoute,
   speakerDetailRoute,

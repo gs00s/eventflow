@@ -13,7 +13,7 @@ describe('EventsPage', () => {
     const event = eventFactory.build();
     server.use(http.get('/api/events', () => HttpResponse.json([event])));
 
-    await renderApp('/events');
+    await renderApp('/');
 
     const link = await screen.findByRole('link', { name: event.title });
     expect(link.getAttribute('href')).toBe(`/events/${event.id}`);
@@ -25,7 +25,7 @@ describe('EventsPage', () => {
     const event = eventFactory.build({ isVip: true });
     server.use(http.get('/api/events', () => HttpResponse.json([event])));
 
-    await renderApp('/events');
+    await renderApp('/');
 
     await screen.findByRole('link', { name: event.title });
     expect(screen.getByText('VIP')).toBeTruthy();
@@ -38,7 +38,7 @@ describe('EventsPage', () => {
     const vipEvent = eventFactory.build({ title: 'VIP Gala', isVip: true });
     server.use(http.get('/api/events/vip', () => HttpResponse.json([publicEvent, vipEvent])));
 
-    await renderApp('/events');
+    await renderApp('/');
 
     await screen.findByRole('link', { name: publicEvent.title });
     expect(screen.getByRole('link', { name: vipEvent.title })).toBeTruthy();
@@ -48,7 +48,7 @@ describe('EventsPage', () => {
     server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
     server.use(http.get('/api/events', () => new HttpResponse(null, { status: 500 })));
 
-    await renderApp('/events');
+    await renderApp('/');
 
     const error = await screen.findByText('Failed to load events.');
 

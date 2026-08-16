@@ -15,7 +15,8 @@ export function EventsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Events</h1>
+      <h1 className="text-2xl font-semibold">EventFlow</h1>
+      <p className="mt-2 text-muted-foreground">Find and register for upcoming events.</p>
       {(isSessionPending || isLoading) && <p className="mt-4 text-muted-foreground">Loading…</p>}
       {isError && <p className="mt-4 text-destructive">Failed to load events.</p>}
       {data && (
