@@ -8,8 +8,8 @@
     "start": "node dist/src/main",
     "lint": "oxlint",
     "typecheck": "tsc --noEmit",
-    "test:unit": "vitest run --config vitest.unit.config.mts --coverage",
-    "test:integration": "vitest run --config vitest.integration.config.mts --coverage",
+    "test:unit": "vitest run --config vitest.unit.config.mts",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed.mts"
