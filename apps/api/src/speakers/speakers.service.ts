@@ -24,9 +24,9 @@ export class SpeakersService {
   }
 
   async findPublicEvents(speakerId: string): Promise<SpeakerEvent[]> {
-    const sessions = await this.speakersRepository.findEvents(speakerId);
+    const rows = await this.speakersRepository.findPublicEvents(speakerId);
 
-    return toSpeakerEvents(sessions.filter(({ event }) => !event.isVip));
+    return toSpeakerEvents(rows);
   }
 
   async findAllEvents(speakerId: string): Promise<SpeakerEvent[]> {

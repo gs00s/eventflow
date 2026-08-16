@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
-import { eventSessions, speakers } from '../db/schemas';
+import { eventSessions, events, speakers } from '../db/schemas';
 
 @Injectable()
 export class SpeakersRepository {
@@ -32,5 +32,13 @@ export class SpeakersRepository {
       where: eq(eventSessions.speakerId, speakerId),
       with: { event: true },
     });
+  }
+
+  findPublicEvents(speakerId: string) {
+    return this.dbService.db
+      .select({ event: events })
+      .from(eventSessions)
+      .innerJoin(events, eq(eventSessions.eventId, events.id))
+      .where(and(eq(eventSessions.speakerId, speakerId), eq(events.isVip, false)));
   }
 }

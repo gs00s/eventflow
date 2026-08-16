@@ -53,20 +53,13 @@ describe('SpeakersController', () => {
     await expect(controller.findEvents('missing-id')).rejects.toThrow(NotFoundException);
   });
 
-  it('lists a speaker’s public events, VIP events excluded', async () => {
+  it('lists a speaker’s public events', async () => {
     const speaker = speakerFactory.build();
     const publicEvent = eventFactory.build();
-    const vipEvent = eventFactory.build({ isVip: true });
-    const publicSession = eventSessionFactory.build({
-      eventId: publicEvent.id,
-      speakerId: speaker.id,
-    });
-    const vipSession = eventSessionFactory.build({ eventId: vipEvent.id, speakerId: speaker.id });
     const module = await Test.createTestingModule({ imports: [SpeakersModule] }).compile();
     vi.spyOn(module.get(SpeakersRepository), 'exists').mockResolvedValueOnce(true);
-    vi.spyOn(module.get(SpeakersRepository), 'findEvents').mockResolvedValueOnce([
-      { ...publicSession, event: publicEvent },
-      { ...vipSession, event: vipEvent },
+    vi.spyOn(module.get(SpeakersRepository), 'findPublicEvents').mockResolvedValueOnce([
+      { event: publicEvent },
     ]);
     const controller = module.get(SpeakersController);
 
