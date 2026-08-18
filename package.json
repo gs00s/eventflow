@@ -12,10 +12,17 @@
     "test:unit": "turbo run test:unit",
     "test:integration": "turbo run test:integration",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "fmt:check": "oxfmt --check",
+    "release": "semantic-release"
   },
   "devDependencies": {
+    "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/git": "11.0.1",
+    "@semantic-release/github": "12.0.9",
+    "@semantic-release/npm": "13.1.5",
+    "@semantic-release/release-notes-generator": "14.1.1",
     "oxfmt": "^0.63.0",
+    "semantic-release": "25.0.9",
     "turbo": "2.10.9"
   },
   "engines": {
