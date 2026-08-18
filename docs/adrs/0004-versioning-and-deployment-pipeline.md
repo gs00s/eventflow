@@ -14,13 +14,13 @@ ADR 0001 deferred "CI + deploy" entirely. This picks it up: how a release gets a
 
 Conventional Commits → `semantic-release`, fully automatic: on every push to `main`, it computes the next semver bump (`fix`/`feat`/`BREAKING CHANGE`; `chore`/`docs`/etc. don't release), commits the bump with `[skip ci]`, and pushes a `vX.Y.Z` tag. No manual gate.
 
-The push/tag is authenticated with `RELEASE_TOKEN` (a fine-grained PAT, Contents: Read and write), not the default `GITHUB_TOKEN` — GitHub deliberately doesn't let events triggered by `GITHUB_TOKEN` fire other workflows, as an anti-recursion measure. Discovered the hard way: `deploy.yml`'s `on: push: tags: ['v*']` never fired for the first two tags, even though they were created successfully, because `release.yml` was still using the default token at the time.
+The push/tag is authenticated with `RELEASE_TOKEN` (a fine-grained PAT, Contents: Read and write), not the default `GITHUB_TOKEN` — GitHub doesn't let `GITHUB_TOKEN`-authored events trigger other workflows. `deploy.yml` listens for `on: release: types: [published]`, matching what `@semantic-release/github` actually does (calls the Releases API), rather than a tag-push trigger.
 
 One version for the whole monorepo (root `package.json`), not per-app. This repo's commits scope by issue id, not package, so `semantic-release`'s path/scope-based monorepo detection doesn't map on cleanly — and `apps/api`/`apps/web` are tightly coupled via `packages/shared-types` anyway. Every release redeploys both.
 
 No branch protection on `main`. Considered requiring PR + passing checks with a bypass for the release bot's own push, but that needs a Personal Access Token from an admin account — an ongoing credential to manage for a repo with a single maintainer, guarding mainly against that same maintainer's own accidental direct push. Revisit if this becomes a team repo.
 
-ADR 0001's separate "push to main: build only" workflow is dropped — `pr.yml` already builds before every merge. `deploy.yml`, triggered on the tags `semantic-release` creates, covers the actual-release case instead: for now it only builds the API's Docker image (validation, no push); the full push-to-Artifact-Registry-and-deploy steps land once the infra to deploy to exists (see Deployment pipeline, below).
+ADR 0001's separate "push to main: build only" workflow is dropped — `pr.yml` already builds before every merge. `deploy.yml` covers the actual-release case instead: for now it only builds the API's Docker image (validation, no push); the full push-to-Artifact-Registry-and-deploy steps land once the infra to deploy to exists (see Deployment pipeline, below).
 
 ### Infrastructure (Terraform)
 
@@ -44,7 +44,7 @@ Single production environment, `us-central1`, default Firebase/Cloud Run address
 
 ### Deployment pipeline
 
-Triggered by `push: tags: ['v*']` — the same tags `semantic-release` creates. One pipeline, so infra and app changes for a release ship together:
+Triggered by `on: release: types: [published]` — the release `semantic-release` publishes. One pipeline, so infra and app changes for a release ship together:
 
 - `terraform plan -out=tfplan` then `terraform apply tfplan` against `infra/`, both in this same job — a fresh plan, not the one computed during the PR's review. Terraform refuses to apply a saved plan against state that's changed since it was computed, and there's no reliable way to hand a specific PR's plan artifact to a tag-triggered run anyway (a release can be cut by a commit that never touched `infra/` at all). The PR's plan is for human review only.
 - Migrations run immediately after, while the old revision still serves — requires an expand/contract pattern (additive first) since old code must tolerate the new schema during the overlap. Not run at container startup, to avoid concurrent instances racing to migrate.
