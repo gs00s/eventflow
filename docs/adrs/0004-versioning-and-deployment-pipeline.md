@@ -26,7 +26,7 @@ Single production environment, `us-central1`, default Firebase/Cloud Run address
 
 **State backend**: Terraform Cloud, execution mode Local — state storage/locking only, `plan`/`apply` run in GitHub Actions. Chosen over a GCS bucket to avoid the chicken-and-egg problem of a backend needing its own storage to exist first; a TFC workspace's creation is a normal one-time manual step, not a self-referential resource.
 
-**Auth**: GitHub → GCP via Workload Identity Federation, no standing key. GitHub → TFC via a static `TF_API_TOKEN` scoped to a single-workspace team (TFC's OIDC support for this is newer/less proven — deferred, see Alternatives). TFC never holds GCP credentials.
+**Auth**: GitHub → GCP via Workload Identity Federation, no standing key. GitHub → TFC via a static `TF_API_TOKEN` — a **user** API token, not a team token: HCP Terraform's Free plan has no Team management, so there's no way to scope it to a single workspace. OIDC isn't an alternative here either — HCP Terraform's OIDC/dynamic-credentials feature only lets a run _executing inside HCP Terraform_ authenticate _out_ to a cloud provider, not an external CLI (GitHub Actions) authenticate _into_ HCP Terraform's API in place of a static token (verified against HashiCorp's docs, see Alternatives). TFC never holds GCP credentials.
 
 **Bootstrap**: one GCP service account for both bootstrap and ongoing use. One manual `terraform apply` from Cloud Shell (browser-based, no local install) creates the account, WIF pool/provider, and role bindings; everything after runs from GitHub Actions via WIF. Some human-authenticated action has to seed the first trusted identity in any cloud's IAM — the goal is making it a single disposable browser action, not a standing dependency.
 
@@ -44,7 +44,7 @@ Single production environment, `us-central1`, default Firebase/Cloud Run address
 
 Triggered by `push: tags: ['v*']` — the same tags `semantic-release` creates. One pipeline, so infra and app changes for a release ship together:
 
-- `terraform apply` against `infra/`.
+- `terraform plan -out=tfplan` then `terraform apply tfplan` against `infra/`, both in this same job — a fresh plan, not the one computed during the PR's review. Terraform refuses to apply a saved plan against state that's changed since it was computed, and there's no reliable way to hand a specific PR's plan artifact to a tag-triggered run anyway (a release can be cut by a commit that never touched `infra/` at all). The PR's plan is for human review only.
 - Migrations run immediately after, while the old revision still serves — requires an expand/contract pattern (additive first) since old code must tolerate the new schema during the overlap. Not run at container startup, to avoid concurrent instances racing to migrate.
 - Backend: build a new multi-stage `Dockerfile` for `apps/api` (handles the pnpm workspace), tag with the git tag, push to Artifact Registry, `gcloud run deploy`.
 - Frontend: `vite build`, `firebase deploy --only hosting`, after the backend — so the new frontend is never live before the API it expects.
@@ -55,7 +55,8 @@ Triggered by `push: tags: ['v*']` — the same tags `semantic-release` creates. 
 
 - **GCS bucket as state backend** — same bootstrap problem, but as a workaround rather than TFC's normal setup flow.
 - **Service-account key for GitHub → GCP** — long-lived, unscoped to repo/branch, standing leak risk. WIF instead.
-- **OIDC for GitHub → TFC** — newer/less-documented than GCP's WIF path. Deferred, not adopted.
+- **OIDC for GitHub → TFC** — doesn't exist for this direction. HCP Terraform's dynamic-credentials feature is for a run inside HCP Terraform authenticating to a cloud provider, not for an external CLI authenticating to HCP Terraform itself.
+- **Team-scoped `TF_API_TOKEN`** — not available: Team management is gated behind a paid HCP Terraform plan. The user token is broader-scoped than intended, mitigated only by using a token dedicated to CI (separate from the maintainer's own `terraform login` session) so it can be rotated independently.
 - **Separate bootstrap-only service account** — smaller blast radius, but one more identity to reason about than the payoff justifies here.
 - **`release-please`** — Release-PR model adds a manual gate; the goal here is full continuous deployment.
 - **Independent per-app versioning** — this repo's commits scope by issue id, not package, so per-app detection doesn't map on cleanly.
