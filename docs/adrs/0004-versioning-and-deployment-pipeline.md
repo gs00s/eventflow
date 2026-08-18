@@ -14,6 +14,8 @@ ADR 0001 deferred "CI + deploy" entirely. This picks it up: how a release gets a
 
 Conventional Commits → `semantic-release`, fully automatic: on every push to `main`, it computes the next semver bump (`fix`/`feat`/`BREAKING CHANGE`; `chore`/`docs`/etc. don't release), commits the bump with `[skip ci]`, and pushes a `vX.Y.Z` tag. No manual gate.
 
+The push/tag is authenticated with `RELEASE_TOKEN` (a fine-grained PAT, Contents: Read and write), not the default `GITHUB_TOKEN` — GitHub deliberately doesn't let events triggered by `GITHUB_TOKEN` fire other workflows, as an anti-recursion measure. Discovered the hard way: `deploy.yml`'s `on: push: tags: ['v*']` never fired for the first two tags, even though they were created successfully, because `release.yml` was still using the default token at the time.
+
 One version for the whole monorepo (root `package.json`), not per-app. This repo's commits scope by issue id, not package, so `semantic-release`'s path/scope-based monorepo detection doesn't map on cleanly — and `apps/api`/`apps/web` are tightly coupled via `packages/shared-types` anyway. Every release redeploys both.
 
 No branch protection on `main`. Considered requiring PR + passing checks with a bypass for the release bot's own push, but that needs a Personal Access Token from an admin account — an ongoing credential to manage for a repo with a single maintainer, guarding mainly against that same maintainer's own accidental direct push. Revisit if this becomes a team repo.
