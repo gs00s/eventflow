@@ -16,7 +16,7 @@ Conventional Commits → `semantic-release`, fully automatic: on every push to `
 
 One version for the whole monorepo (root `package.json`), not per-app. This repo's commits scope by issue id, not package, so `semantic-release`'s path/scope-based monorepo detection doesn't map on cleanly — and `apps/api`/`apps/web` are tightly coupled via `packages/shared-types` anyway. Every release redeploys both.
 
-Branch protection added to `main` (PR + passing checks), since a push there can now trigger a deploy and none exists today. Bypass allowance for the release bot's own push.
+No branch protection on `main`. Considered requiring PR + passing checks with a bypass for the release bot's own push, but that needs a Personal Access Token from an admin account — an ongoing credential to manage for a repo with a single maintainer, guarding mainly against that same maintainer's own accidental direct push. Revisit if this becomes a team repo.
 
 ### Infrastructure (Terraform)
 
