@@ -5,7 +5,9 @@
     "moduleResolution": "nodenext",
     "strict": true,
     "declaration": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "rootDir": "src"
   },
   "include": ["src"]
 }
