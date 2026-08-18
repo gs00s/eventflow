@@ -42,7 +42,7 @@ Backend stays framework-agnostic toward its consumers (PRD: "serve multiple fron
 **CI/CD**: GitHub Actions only, no deploy (out of scope for now).
 
 - `pull_request`: lint → typecheck → test (`vitest run --coverage`) → build — required checks.
-- `push` to `main`: build only (post-merge sanity check).
+- ~~`push` to `main`: build only (post-merge sanity check)~~ — dropped per [ADR 0004](./0004-versioning-and-deployment-pipeline.md): redundant with `pr.yml`'s pre-merge build; `deploy.yml`'s tag-triggered build (same ADR) now covers the actual-release case instead.
 
 ## Alternatives Considered
 

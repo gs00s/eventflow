@@ -18,6 +18,8 @@ One version for the whole monorepo (root `package.json`), not per-app. This repo
 
 No branch protection on `main`. Considered requiring PR + passing checks with a bypass for the release bot's own push, but that needs a Personal Access Token from an admin account — an ongoing credential to manage for a repo with a single maintainer, guarding mainly against that same maintainer's own accidental direct push. Revisit if this becomes a team repo.
 
+ADR 0001's separate "push to main: build only" workflow is dropped — `pr.yml` already builds before every merge. `deploy.yml`, triggered on the tags `semantic-release` creates, covers the actual-release case instead: for now it only builds the API's Docker image (validation, no push); the full push-to-Artifact-Registry-and-deploy steps land once the infra to deploy to exists (see Deployment pipeline, below).
+
 ### Infrastructure (Terraform)
 
 Single production environment, `us-central1`, default Firebase/Cloud Run addresses.
