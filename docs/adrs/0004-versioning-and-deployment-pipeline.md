@@ -36,16 +36,17 @@ Single production environment, `us-central1`, default Firebase/Cloud Run address
 
 **Secrets**: `DATABASE_URL` (Neon provider output) and `BETTER_AUTH_SECRET` in Secret Manager, mounted into Cloud Run. `BETTER_AUTH_SECRET`'s value is generated once by hand, not by Terraform — a `random_password` resource getting replaced would silently regenerate it and invalidate every session. `CORS_ORIGIN`/`BETTER_AUTH_URL`/`PORT` are plain env vars; no `env.ts` changes needed.
 
-**Layout**: flat `infra/` directory, no module hierarchy (single environment). `terraform-plan.yml` on PRs touching `infra/**`, `terraform-apply.yml` on merge to `main`.
+**Layout**: flat `infra/` directory, no module hierarchy (single environment). `terraform-plan.yml` on PRs touching `infra/**` lints/validates/plans for review; `apply` itself doesn't run on every push to `main` — it's a step in the tag-triggered deployment pipeline below, so infra changes land in lockstep with the release that needed them rather than on a separate trigger.
 
 ### Deployment pipeline
 
-Triggered by `push: tags: ['v*']` — the same tags `semantic-release` creates.
+Triggered by `push: tags: ['v*']` — the same tags `semantic-release` creates. One pipeline, so infra and app changes for a release ship together:
 
+- `terraform apply` against `infra/`.
+- Migrations run immediately after, while the old revision still serves — requires an expand/contract pattern (additive first) since old code must tolerate the new schema during the overlap. Not run at container startup, to avoid concurrent instances racing to migrate.
 - Backend: build a new multi-stage `Dockerfile` for `apps/api` (handles the pnpm workspace), tag with the git tag, push to Artifact Registry, `gcloud run deploy`.
-- Migrations run as a pipeline step immediately before deploy, while the old revision still serves — requires an expand/contract pattern (additive first) since old code must tolerate the new schema during the overlap. Not run at container startup, to avoid concurrent instances racing to migrate.
 - Frontend: `vite build`, `firebase deploy --only hosting`, after the backend — so the new frontend is never live before the API it expects.
-- Same WIF-based service account for both jobs.
+- Same WIF-based service account for every step.
 - Rollback is a manual runbook (`gcloud run services update-traffic`, `firebase hosting:rollback`), not automated — deliberate scope cut.
 
 ## Alternatives Considered
