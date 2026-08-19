@@ -2,6 +2,10 @@ provider "google" {
   project = "eventflow-506013"
 }
 
+provider "google-beta" {
+  project = "eventflow-506013"
+}
+
 data "google_project" "current" {}
 
 output "gcp_project_number" {

@@ -24,7 +24,7 @@ ADR 0001's separate "push to main: build only" workflow is dropped — `pr.yml` 
 
 ### Infrastructure (Terraform)
 
-Single production environment, `us-central1`, default Firebase/Cloud Run addresses.
+Single production environment, `us-east4`, default Firebase/Cloud Run addresses — chosen to colocate with Neon's `aws-us-east-1` (N. Virginia) database region, minimizing DB round-trip latency; GCP has no direct AWS-region equivalent, but `us-east4` (Ashburn, VA) is the closest match, unlike `us-east1` (South Carolina).
 
 **State backend**: Terraform Cloud, execution mode Local — state storage/locking only, `plan`/`apply` run in GitHub Actions. Chosen over a GCS bucket to avoid the chicken-and-egg problem of a backend needing its own storage to exist first; a TFC workspace's creation is a normal one-time manual step, not a self-referential resource.
 

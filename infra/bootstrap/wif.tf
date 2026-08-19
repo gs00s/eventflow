@@ -2,6 +2,8 @@ locals {
   repository = "gs00s/eventflow"
 }
 
+data "google_project" "current" {}
+
 resource "google_project_service" "iam" {
   service            = "iam.googleapis.com"
   disable_on_destroy = false
@@ -65,6 +67,32 @@ resource "google_project_iam_member" "github_actions_viewer" {
   project = "eventflow-506013"
   role    = "roles/viewer"
   member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
+}
+
+resource "google_project_iam_member" "github_actions_run_admin" {
+  project = "eventflow-506013"
+  role    = "roles/run.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
+}
+
+resource "google_project_iam_member" "github_actions_firebasehosting_admin" {
+  project = "eventflow-506013"
+  role    = "roles/firebasehosting.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
+}
+
+# Lets infra/ enable run.googleapis.com / firebasehosting.googleapis.com itself, instead of another manual bootstrap apply per API.
+resource "google_project_iam_member" "github_actions_serviceusage_admin" {
+  project = "eventflow-506013"
+  role    = "roles/serviceusage.serviceUsageAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
+}
+
+# Cloud Run revisions run as the default Compute SA unless overridden; deploying against it needs actAs on that identity.
+resource "google_service_account_iam_member" "github_actions_default_compute_sa_user" {
+  service_account_id = "projects/eventflow-506013/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.github_actions_deployer.email}"
 }
 
 output "workload_identity_provider" {
