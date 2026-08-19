@@ -36,7 +36,7 @@ Write-level GCP roles are granted to the service account one at a time, in which
 
 **Database**: Neon Postgres, fully declarative via its own Terraform provider.
 
-**Backend**: Cloud Run, `--no-allow-unauthenticated`. Only Firebase Hosting's rewrite (granted `run.invoker`) can reach it — one public entry point, not two. Doesn't affect local dev (`pnpm dev` never touches deployed infra) or direct debugging (any principal explicitly granted `run.invoker` can still call it with an identity token).
+**Backend**: Cloud Run, public (`allUsers` granted `run.invoker`) — Firebase Hosting's classic `firebase.json`-style rewrite has no per-project service agent to grant `run.invoker` to instead; Google's own docs confirm the rewrite mechanism requires the target service to allow unauthenticated invocations, full stop. (Originally planned to keep Cloud Run private with only the rewrite able to reach it — not achievable with this integration; see Alternatives.) The raw `*.run.app` URL is therefore a second reachable entry point alongside Hosting, same as most Firebase+Cloud Run deployments; the actual security boundary is the API's own auth layer (Better Auth sessions), not network reachability.
 
 **Frontend**: Firebase Hosting, `/api/**` rewritten to Cloud Run — gives same-origin cookies for free per ADR 0002, no custom proxy needed.
 
@@ -66,6 +66,6 @@ Triggered by `on: release: types: [published]` — the release `semantic-release
 - **`release-please`** — Release-PR model adds a manual gate; the goal here is full continuous deployment.
 - **Independent per-app versioning** — this repo's commits scope by issue id, not package, so per-app detection doesn't map on cleanly.
 - **TFC VCS-driven execution** — would move pipeline logic out of versioned GitHub Actions config into TFC's own UI settings.
-- **Public Cloud Run** — doubles the API's live public surface for no benefit once Firebase's rewrite exists.
+- **Private Cloud Run reachable only via Firebase Hosting's rewrite** — the original plan; abandoned once implementation showed `firebasehosting.googleapis.com` has no generated service agent to grant `run.invoker` to, and Google's own docs confirm the classic Hosting rewrite requires public Cloud Run. Not worth chasing the newer, separate Cloud Run "integrations" feature or a custom proxy just to keep the raw `*.run.app` URL private — the API's own auth layer is the real boundary either way.
 - **Automated rollback** — deferred as a future improvement.
 - **Custom domain** — deferred; ship on default addresses first.
