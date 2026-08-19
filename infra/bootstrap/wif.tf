@@ -24,6 +24,13 @@ resource "google_project_service" "cloudresourcemanager" {
   disable_on_destroy = false
 }
 
+# Newer GCP projects don't auto-create the default Compute SA at project creation — only on first use of this API.
+# Cloud Run revisions run as that SA by default, so it must exist before the grant below can target it.
+resource "google_project_service" "compute" {
+  service            = "compute.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_iam_workload_identity_pool" "github_actions" {
   workload_identity_pool_id = "github-actions"
   display_name              = "GitHub Actions"
@@ -93,6 +100,8 @@ resource "google_service_account_iam_member" "github_actions_default_compute_sa_
   service_account_id = "projects/eventflow-506013/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.github_actions_deployer.email}"
+
+  depends_on = [google_project_service.compute]
 }
 
 output "workload_identity_provider" {
