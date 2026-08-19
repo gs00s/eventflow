@@ -8,4 +8,10 @@ terraform {
       name = "eventflow-cli"
     }
   }
+
+  required_providers {
+    neon = {
+      source = "kislerdm/neon"
+    }
+  }
 }
