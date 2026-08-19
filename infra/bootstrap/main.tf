@@ -5,16 +5,17 @@ terraform {
     organization = "Eventflow"
 
     workspaces {
-      name = "eventflow-cli"
+      name = "eventflow-bootstrap"
     }
   }
 
   required_providers {
-    neon = {
-      source = "kislerdm/neon"
-    }
     google = {
       source = "hashicorp/google"
     }
   }
+}
+
+provider "google" {
+  project = "eventflow-506013"
 }
