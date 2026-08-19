@@ -45,7 +45,6 @@ jobs:
       - run: pnpm --filter=@eventflow/api db:migrate
         env:
           DATABASE_URL: ${{ needs.terraform-apply.outputs.database_url }}
-          BETTER_AUTH_SECRET: ci-migration-only-not-a-real-secret-0000
 
   build-api-image:
     runs-on: ubuntu-latest
