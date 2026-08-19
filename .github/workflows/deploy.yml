@@ -6,36 +6,27 @@ on:
       - published
 
 jobs:
-  terraform-apply:
+  terraform-apply-and-migrate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: infra
     env:
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-    outputs:
-      database_url: ${{ steps.output.outputs.database_url }}
     steps:
       - uses: actions/checkout@v7
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.15.8
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-      - run: terraform init -input=false
-      - run: terraform plan -input=false -out=tfplan
-      - run: terraform apply -input=false tfplan
-      - id: output
+      - working-directory: infra
+        run: terraform init -input=false
+      - working-directory: infra
+        run: terraform plan -input=false -out=tfplan
+      - working-directory: infra
+        run: terraform apply -input=false tfplan
+      - working-directory: infra
         run: |
           DB_URL=$(terraform output -raw database_url)
           echo "::add-mask::$DB_URL"
-          echo "database_url=$DB_URL" >> "$GITHUB_OUTPUT"
-
-  migrate:
-    needs: terraform-apply
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - run: echo "::add-mask::${{ needs.terraform-apply.outputs.database_url }}"
+          echo "DATABASE_URL=$DB_URL" >> "$GITHUB_ENV"
       - id: node-version
         run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
       - uses: pnpm/setup@v2
@@ -43,8 +34,6 @@ jobs:
           runtime: node@${{ steps.node-version.outputs.version }}
           cache: true
       - run: pnpm --filter=@eventflow/api db:migrate
-        env:
-          DATABASE_URL: ${{ needs.terraform-apply.outputs.database_url }}
 
   build-api-image:
     runs-on: ubuntu-latest
