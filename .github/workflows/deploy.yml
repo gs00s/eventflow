@@ -15,6 +15,7 @@ jobs:
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
     outputs:
       project_id: ${{ steps.project-id.outputs.project_id }}
+      region: ${{ steps.region.outputs.region }}
     steps:
       - uses: actions/checkout@v7
       - uses: google-github-actions/auth@v2
@@ -39,6 +40,9 @@ jobs:
       - id: project-id
         working-directory: infra
         run: echo "project_id=$(terraform output -raw gcp_project_id)" >> "$GITHUB_OUTPUT"
+      - id: region
+        working-directory: infra
+        run: echo "region=$(terraform output -raw gcp_region)" >> "$GITHUB_OUTPUT"
       - id: node-version
         run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
       - uses: pnpm/setup@v2
@@ -55,6 +59,7 @@ jobs:
       id-token: write
     env:
       GCP_PROJECT_ID: ${{ needs.terraform-apply-and-migrate.outputs.project_id }}
+      GCP_REGION: ${{ needs.terraform-apply-and-migrate.outputs.region }}
     steps:
       - uses: actions/checkout@v7
       - uses: google-github-actions/auth@v2
@@ -62,13 +67,13 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v2
-      - run: gcloud auth configure-docker us-east4-docker.pkg.dev --quiet
+      - run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
       - id: image
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
           TAG="${TAG_NAME#v}"
-          IMAGE="us-east4-docker.pkg.dev/${GCP_PROJECT_ID}/eventflow/api:${TAG}"
+          IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/eventflow/api:${TAG}"
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
@@ -80,7 +85,7 @@ jobs:
       - run: |
           gcloud run deploy api \
             --image="${{ steps.image.outputs.image }}" \
-            --region=us-east4 \
+            --region="${GCP_REGION}" \
             --project="${GCP_PROJECT_ID}"
 
   deploy-web:

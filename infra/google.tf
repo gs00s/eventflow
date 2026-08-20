@@ -25,3 +25,7 @@ output "gcp_project_number" {
 output "gcp_project_id" {
   value = var.project_id
 }
+
+output "gcp_region" {
+  value = var.region
+}
