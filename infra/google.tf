@@ -1,9 +1,14 @@
+variable "project_id" {
+  type    = string
+  default = "eventflow-506013"
+}
+
 provider "google" {
-  project = "eventflow-506013"
+  project = var.project_id
 }
 
 provider "google-beta" {
-  project = "eventflow-506013"
+  project = var.project_id
 }
 
 data "google_project" "current" {}

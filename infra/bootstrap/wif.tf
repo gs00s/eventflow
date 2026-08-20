@@ -68,31 +68,31 @@ resource "google_service_account_iam_member" "github_actions_wif" {
 }
 
 resource "google_project_iam_member" "github_actions_viewer" {
-  project = "eventflow-506013"
+  project = var.project_id
   role    = "roles/viewer"
   member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
 }
 
 resource "google_project_iam_member" "github_actions_run_admin" {
-  project = "eventflow-506013"
+  project = var.project_id
   role    = "roles/run.admin"
   member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
 }
 
 resource "google_project_iam_member" "github_actions_firebasehosting_admin" {
-  project = "eventflow-506013"
+  project = var.project_id
   role    = "roles/firebasehosting.admin"
   member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
 }
 
 resource "google_project_iam_member" "github_actions_serviceusage_admin" {
-  project = "eventflow-506013"
+  project = var.project_id
   role    = "roles/serviceusage.serviceUsageAdmin"
   member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
 }
 
 resource "google_service_account_iam_member" "github_actions_default_compute_sa_user" {
-  service_account_id = "projects/eventflow-506013/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.github_actions_deployer.email}"
 
@@ -100,13 +100,13 @@ resource "google_service_account_iam_member" "github_actions_default_compute_sa_
 }
 
 resource "google_project_iam_member" "github_actions_artifactregistry_admin" {
-  project = "eventflow-506013"
+  project = var.project_id
   role    = "roles/artifactregistry.admin"
   member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
 }
 
 resource "google_project_iam_member" "github_actions_secretmanager_admin" {
-  project = "eventflow-506013"
+  project = var.project_id
   role    = "roles/secretmanager.admin"
   member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
 }

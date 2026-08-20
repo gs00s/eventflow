@@ -5,8 +5,7 @@ resource "google_project_service" "firebasehosting" {
 
 resource "google_firebase_hosting_site" "app" {
   provider = google-beta
-  project  = "eventflow-506013"
-  site_id  = "eventflow-506013"
+  site_id  = var.project_id
 
   depends_on = [google_project_service.firebasehosting]
 }
