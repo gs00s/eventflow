@@ -30,7 +30,7 @@ resource "google_cloud_run_v2_service" "api" {
         name = "DATABASE_URL"
         value_source {
           secret_key_ref {
-            secret  = google_secret_manager_secret.database_url.secret_id
+            secret  = google_secret_manager_secret.api_database_url.secret_id
             version = "latest"
           }
         }
@@ -40,7 +40,7 @@ resource "google_cloud_run_v2_service" "api" {
         name = "BETTER_AUTH_SECRET"
         value_source {
           secret_key_ref {
-            secret  = google_secret_manager_secret.better_auth_secret.secret_id
+            secret  = google_secret_manager_secret.api_better_auth_secret.secret_id
             version = "latest"
           }
         }
