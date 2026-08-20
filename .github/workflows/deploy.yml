@@ -76,7 +76,7 @@ jobs:
             --region=us-east4 \
             --project=eventflow-506013
 
-  deploy-frontend:
+  deploy-web:
     needs: deploy-api
     runs-on: ubuntu-latest
     permissions:
