@@ -13,6 +13,8 @@ jobs:
       id-token: write
     env:
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+    outputs:
+      project_id: ${{ steps.project-id.outputs.project_id }}
     steps:
       - uses: actions/checkout@v7
       - uses: google-github-actions/auth@v2
@@ -34,6 +36,9 @@ jobs:
           DB_URL=$(terraform output -raw database_url)
           echo "::add-mask::$DB_URL"
           echo "DATABASE_URL=$DB_URL" >> "$GITHUB_ENV"
+      - id: project-id
+        working-directory: infra
+        run: echo "project_id=$(terraform output -raw gcp_project_id)" >> "$GITHUB_OUTPUT"
       - id: node-version
         run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
       - uses: pnpm/setup@v2
@@ -48,6 +53,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ needs.terraform-apply-and-migrate.outputs.project_id }}
     steps:
       - uses: actions/checkout@v7
       - uses: google-github-actions/auth@v2
@@ -61,7 +68,7 @@ jobs:
           TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
           TAG="${TAG_NAME#v}"
-          IMAGE="us-east4-docker.pkg.dev/eventflow-506013/eventflow/api:${TAG}"
+          IMAGE="us-east4-docker.pkg.dev/${GCP_PROJECT_ID}/eventflow/api:${TAG}"
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
@@ -74,14 +81,16 @@ jobs:
           gcloud run deploy api \
             --image="${{ steps.image.outputs.image }}" \
             --region=us-east4 \
-            --project=eventflow-506013
+            --project="${GCP_PROJECT_ID}"
 
   deploy-web:
-    needs: deploy-api
+    needs: [deploy-api, terraform-apply-and-migrate]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ needs.terraform-apply-and-migrate.outputs.project_id }}
     steps:
       - uses: actions/checkout@v7
       - uses: google-github-actions/auth@v2
@@ -96,4 +105,4 @@ jobs:
           cache: true
       - run: pnpm --filter=@eventflow/web build
       # Pinned: firebase-tools' WIF/ADC auth has open upstream bugs on newer releases (firebase/firebase-tools#10716, #10726) — bump once confirmed fixed.
-      - run: npx firebase-tools@15.22.1 deploy --only hosting --non-interactive --project=eventflow-506013
+      - run: npx firebase-tools@15.22.1 deploy --only hosting --non-interactive --project="${GCP_PROJECT_ID}"

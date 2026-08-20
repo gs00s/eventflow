@@ -16,3 +16,7 @@ data "google_project" "current" {}
 output "gcp_project_number" {
   value = data.google_project.current.number
 }
+
+output "gcp_project_id" {
+  value = var.project_id
+}
