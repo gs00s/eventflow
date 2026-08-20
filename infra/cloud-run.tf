@@ -5,7 +5,7 @@ resource "google_project_service" "run" {
 
 resource "google_cloud_run_v2_service" "api" {
   name                = "api"
-  location            = "us-east4"
+  location            = var.region
   deletion_protection = false
 
   template {

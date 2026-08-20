@@ -4,7 +4,7 @@ resource "google_project_service" "artifactregistry" {
 }
 
 resource "google_artifact_registry_repository" "eventflow" {
-  location      = "us-east4"
+  location      = var.region
   repository_id = "eventflow"
   format        = "DOCKER"
 

@@ -3,6 +3,11 @@ variable "project_id" {
   default = "eventflow-506013"
 }
 
+variable "region" {
+  type    = string
+  default = "us-east4"
+}
+
 provider "google" {
   project = var.project_id
 }
