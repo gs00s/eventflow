@@ -61,7 +61,7 @@ jobs:
           TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
           TAG="${TAG_NAME#v}"
-          IMAGE="us-east4-docker.pkg.dev/eventflow-506013/api/api:${TAG}"
+          IMAGE="us-east4-docker.pkg.dev/eventflow-506013/eventflow/api:${TAG}"
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
