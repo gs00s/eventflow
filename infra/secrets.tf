@@ -8,7 +8,7 @@ locals {
 }
 
 resource "google_secret_manager_secret" "database_url" {
-  secret_id = "eventflow-database-url"
+  secret_id = "eventflow-api-database-url"
   replication {
     auto {}
   }
@@ -28,7 +28,7 @@ resource "google_secret_manager_secret_iam_member" "database_url_accessor" {
 }
 
 resource "google_secret_manager_secret" "better_auth_secret" {
-  secret_id = "eventflow-better-auth-secret"
+  secret_id = "eventflow-api-better-auth-secret"
   replication {
     auto {}
   }

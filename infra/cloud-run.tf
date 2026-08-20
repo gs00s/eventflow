@@ -48,7 +48,6 @@ resource "google_cloud_run_v2_service" "api" {
     }
   }
 
-  # The real deploy pipeline (ADR 0004) owns the image/revision from here on — don't fight it over these on every plan.
   lifecycle {
     ignore_changes = [client, client_version, template[0].containers[0].image]
   }
