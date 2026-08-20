@@ -24,6 +24,12 @@ resource "google_project_service" "cloudresourcemanager" {
   disable_on_destroy = false
 }
 
+# Enabled manually via gcloud during #59 (default Compute SA didn't exist until this API was touched) — tracked here now that bootstrap's being touched again.
+resource "google_project_service" "compute" {
+  service            = "compute.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_iam_workload_identity_pool" "github_actions" {
   workload_identity_pool_id = "github-actions"
   display_name              = "GitHub Actions"
@@ -93,6 +99,20 @@ resource "google_service_account_iam_member" "github_actions_default_compute_sa_
   service_account_id = "projects/eventflow-506013/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.github_actions_deployer.email}"
+
+  depends_on = [google_project_service.compute]
+}
+
+resource "google_project_iam_member" "github_actions_artifactregistry_admin" {
+  project = "eventflow-506013"
+  role    = "roles/artifactregistry.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
+}
+
+resource "google_project_iam_member" "github_actions_secretmanager_admin" {
+  project = "eventflow-506013"
+  role    = "roles/secretmanager.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_deployer.email}"
 }
 
 output "workload_identity_provider" {

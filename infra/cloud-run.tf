@@ -11,6 +11,40 @@ resource "google_cloud_run_v2_service" "api" {
   template {
     containers {
       image = "us-docker.pkg.dev/cloudrun/container/hello"
+
+      ports {
+        container_port = 8080
+      }
+
+      env {
+        name  = "CORS_ORIGIN"
+        value = "https://${google_firebase_hosting_site.app.site_id}.web.app"
+      }
+
+      env {
+        name  = "BETTER_AUTH_URL"
+        value = "https://${google_firebase_hosting_site.app.site_id}.web.app/api"
+      }
+
+      env {
+        name = "DATABASE_URL"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.database_url.secret_id
+            version = "latest"
+          }
+        }
+      }
+
+      env {
+        name = "BETTER_AUTH_SECRET"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.better_auth_secret.secret_id
+            version = "latest"
+          }
+        }
+      }
     }
   }
 

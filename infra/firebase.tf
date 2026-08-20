@@ -19,24 +19,5 @@ resource "google_cloud_run_v2_service_iam_member" "public_invoker" {
   member   = "allUsers"
 }
 
-resource "google_firebase_hosting_version" "default" {
-  provider = google-beta
-  site_id  = google_firebase_hosting_site.app.site_id
-
-  config {
-    rewrites {
-      glob = "/api/**"
-      run {
-        service_id = google_cloud_run_v2_service.api.name
-        region     = google_cloud_run_v2_service.api.location
-      }
-    }
-  }
-}
-
-resource "google_firebase_hosting_release" "default" {
-  provider     = google-beta
-  site_id      = google_firebase_hosting_site.app.site_id
-  version_name = google_firebase_hosting_version.default.name
-  message      = "Empty rewrite-only release (issue #59) — no real Hosting content yet"
-}
+# Hosting content/rewrites/versions/releases are owned by `firebase deploy --only hosting` (firebase.json) from here on,
+# not Terraform — every CI deploy creates its own version, so tracking one here would fight the CLI on the next apply.
