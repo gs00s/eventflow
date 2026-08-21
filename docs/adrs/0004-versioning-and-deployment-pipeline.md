@@ -40,7 +40,7 @@ Write-level GCP roles are granted to the service account one at a time, in which
 
 **Frontend**: Firebase Hosting, `/api/**` rewritten to Cloud Run — gives same-origin cookies for free per ADR 0002, no custom proxy needed.
 
-**Secrets**: `DATABASE_URL` (Neon provider output) and `BETTER_AUTH_SECRET` in Secret Manager, mounted into Cloud Run. `BETTER_AUTH_SECRET`'s value is generated once by hand, not by Terraform — a `random_password` resource getting replaced would silently regenerate it and invalidate every session. `CORS_ORIGIN`/`BETTER_AUTH_URL`/`PORT` are plain env vars; no `env.ts` changes needed.
+**Secrets**: `DATABASE_URL` (Neon provider output) and `BETTER_AUTH_SECRET` in Secret Manager, mounted into Cloud Run. `BETTER_AUTH_SECRET`'s value is generated once by hand, not by Terraform — a `random_password` resource getting replaced would silently regenerate it and invalidate every session. `CORS_ORIGIN`/`BETTER_AUTH_URL` are plain env vars pointed at the Hosting URL; no `env.ts` changes needed. `PORT` is not one of them — Cloud Run reserves that name and injects it automatically based on the container's configured port, an explicit `PORT` env var is rejected outright.
 
 **Layout**: flat `infra/` directory, no module hierarchy (single environment). `terraform-plan.yml` on PRs touching `infra/**` lints/validates/plans for review; `apply` itself doesn't run on every push to `main` — it's a step in the tag-triggered deployment pipeline below, so infra changes land in lockstep with the release that needed them rather than on a separate trigger.
 

@@ -1,13 +1,31 @@
+variable "project_id" {
+  type    = string
+  default = "eventflow-506013"
+}
+
+variable "region" {
+  type    = string
+  default = "us-east4"
+}
+
 provider "google" {
-  project = "eventflow-506013"
+  project = var.project_id
 }
 
 provider "google-beta" {
-  project = "eventflow-506013"
+  project = var.project_id
 }
 
 data "google_project" "current" {}
 
 output "gcp_project_number" {
   value = data.google_project.current.number
+}
+
+output "gcp_project_id" {
+  value = var.project_id
+}
+
+output "gcp_region" {
+  value = var.region
 }
