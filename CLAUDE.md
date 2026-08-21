@@ -18,6 +18,17 @@ Issues live in GitHub's Issues tab (`gs00s/eventflow`), not local files. Every b
 
 Never add a `Co-Authored-By: Claude` trailer or other self-attribution.
 
+**Always ask for explicit permission before**: `git commit`, creating a GitHub issue, opening a PR, or merging a PR. Never do these automatically as part of a larger task — surface the change and wait for a yes.
+
+## Writing style (issues, PRs, commits, docs)
+
+- Match length to information, not habit.
+- One fact per sentence. Active voice, imperative mode.
+- Zero filler, zero hedging.
+- Cut anything visible elsewhere (the diff, the linked issue, the code).
+- Lists over prose for 2+ items.
+- Delete any sentence that, if removed, loses no fact.
+
 ## Engineering principles
 
 - **Official docs first** — implement new tech/libraries the way their docs show, not from memory or blog patterns; check current docs before wiring something in.

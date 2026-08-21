@@ -9,8 +9,3 @@ resource "neon_project" "app" {
     database_name = "eventflow"
   }
 }
-
-output "database_url" {
-  value     = neon_project.app.connection_uri_pooler
-  sensitive = true
-}
