@@ -16,11 +16,6 @@ resource "google_secret_manager_secret" "api_database_url" {
   depends_on = [google_project_service.secretmanager]
 }
 
-resource "google_secret_manager_secret_version" "api_database_url" {
-  secret      = google_secret_manager_secret.api_database_url.id
-  secret_data = neon_project.app.connection_uri_pooler
-}
-
 resource "google_secret_manager_secret_iam_member" "api_database_url_accessor" {
   secret_id = google_secret_manager_secret.api_database_url.secret_id
   role      = "roles/secretmanager.secretAccessor"
