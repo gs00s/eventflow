@@ -35,16 +35,6 @@ resource "google_cloud_run_v2_service" "api" {
           }
         }
       }
-
-      env {
-        name = "BETTER_AUTH_SECRET"
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.api_better_auth_secret.secret_id
-            version = "latest"
-          }
-        }
-      }
     }
   }
 
