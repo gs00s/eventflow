@@ -64,8 +64,8 @@ jobs:
         with:
           runtime: node@${{ steps.node-version.outputs.version }}
           cache: true
-      - run: pnpm --filter=@eventflow/api db:migrate
-      - run: pnpm --filter=@eventflow/api db:seed
+      - run: pnpm --filter=@eventflow/api... db:migrate
+      - run: pnpm --filter=@eventflow/api... db:seed
 
   deploy-api:
     needs: [migrate-and-seed, terraform-apply]
