@@ -58,6 +58,10 @@ jobs:
           DB_URL=$(gcloud secrets versions access latest --secret=eventflow-api-database-url --project="${GCP_PROJECT_ID}")
           echo "::add-mask::$DB_URL"
           echo "DATABASE_URL=$DB_URL" >> "$GITHUB_ENV"
+      - run: |
+          AUTH_SECRET=$(gcloud secrets versions access latest --secret=eventflow-api-better-auth-secret --project="${GCP_PROJECT_ID}")
+          echo "::add-mask::$AUTH_SECRET"
+          echo "BETTER_AUTH_SECRET=$AUTH_SECRET" >> "$GITHUB_ENV"
       - id: node-version
         run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
       - uses: pnpm/setup@v2
