@@ -21,6 +21,7 @@
     "@semantic-release/github": "12.0.9",
     "@semantic-release/npm": "13.1.5",
     "@semantic-release/release-notes-generator": "14.1.1",
+    "firebase-tools": "15.22.1",
     "oxfmt": "^0.63.0",
     "semantic-release": "25.0.9",
     "turbo": "2.10.9"

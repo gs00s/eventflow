@@ -130,5 +130,5 @@ jobs:
           runtime: node@${{ steps.node-version.outputs.version }}
           cache: true
       - run: pnpm --filter=@eventflow/web... build
-      # Pinned: firebase-tools' WIF/ADC auth has open upstream bugs on newer releases (firebase/firebase-tools#10716, #10726) — bump once confirmed fixed.
-      - run: npx firebase-tools@15.22.1 deploy --only hosting --non-interactive --project="${GCP_PROJECT_ID}"
+      # Pinned in package.json: firebase-tools' WIF/ADC auth has open upstream bugs on newer releases (firebase/firebase-tools#10716, #10726) — bump once confirmed fixed.
+      - run: pnpm exec firebase deploy --only hosting --non-interactive --project="${GCP_PROJECT_ID}"
