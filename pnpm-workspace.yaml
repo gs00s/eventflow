@@ -10,6 +10,7 @@ allowBuilds:
   esbuild: true
   msw: true
   protobufjs: true
+  re2: false # only used by firebase-tools' local emulator/regex-rewrite serving, never by `firebase deploy`
   ssh2: true
 
 # Native build scripts are blocked by default; approve per-package via `pnpm approve-builds`
