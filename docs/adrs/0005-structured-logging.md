@@ -29,11 +29,11 @@ No business-event logging (registration created, VIP flips, etc.) — the filter
 
 ### Redaction
 
-Deny-list at the logger config level: `req.headers.authorization`, `req.headers.cookie` (carries the Better Auth session token), and any field named `*.password`/`*.token`/`*.secret` wherever it appears. Structural, not per-call-site — protects even a future call site that logs a request/error object carelessly.
+Deny-list at the logger config level: `req.headers` and `res.headers` in full (the session cookie lives in `req.headers.cookie`; the rest — user-agent, Helmet's CSP/HSTS dump, etc. — is just noise, redacted the same way rather than enumerated field-by-field), plus any field named `*.password`/`*.token`/`*.secret` wherever it appears. Structural, not per-call-site — protects even a future call site that logs a request/error object carelessly.
 
 ### GCP Cloud Logging integration
 
-A `formatters.level` hook maps pino's level to GCP's expected `severity` field. Must explicitly return the original numeric `level` alongside `severity` — pino's `formatters.level` *replaces* the default `level` field rather than merging with it, so omitting it here would silently break tooling that expects it later (Datadog's pino ingestion, `pino-pretty` for local dev).
+A `formatters.level` hook maps pino's level to GCP's expected `severity` field. Must explicitly return the original numeric `level` alongside `severity` — pino's `formatters.level` _replaces_ the default `level` field rather than merging with it, so omitting it here would silently break tooling that expects it later (Datadog's pino ingestion, `pino-pretty` for local dev).
 
 ```js
 formatters: {
