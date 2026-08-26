@@ -36,3 +36,18 @@ resource "google_secret_manager_secret_iam_member" "api_better_auth_secret_acces
   role      = "roles/secretmanager.secretAccessor"
   member    = local.default_compute_sa
 }
+
+resource "google_secret_manager_secret" "api_datadog_api_key" {
+  secret_id = "eventflow-api-datadog-api-key"
+  replication {
+    auto {}
+  }
+
+  depends_on = [google_project_service.secretmanager]
+}
+
+resource "google_secret_manager_secret_iam_member" "api_datadog_api_key_accessor" {
+  secret_id = google_secret_manager_secret.api_datadog_api_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = local.default_compute_sa
+}
