@@ -1,8 +1,10 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { createAuthMiddleware, isAPIError } from 'better-auth/api';
 import { PinoLogger } from 'nestjs-pino';
 import { db } from '../db/connection';
 import { env } from '../env';
+import { loginAttemptsCounter } from '../metrics/login-attempts.counter';
 import * as schema from '../db/schemas';
 
 export const auth = betterAuth({
@@ -40,5 +42,14 @@ export const auth = betterAuth({
       '/sign-in/email': { window: 10, max: 5 },
       '/sign-up/email': { window: 10, max: 10 },
     },
+  },
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== '/sign-in/email') return;
+
+      loginAttemptsCounter.inc({
+        status: isAPIError(ctx.context.returned) ? 'failure' : 'success',
+      });
+    }),
   },
 });

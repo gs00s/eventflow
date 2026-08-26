@@ -85,6 +85,11 @@ resource "google_cloud_run_v2_service" "api" {
       }
 
       env {
+        name  = "METRICS_SCRAPE_HOST"
+        value = "localhost"
+      }
+
+      env {
         name = "DD_API_KEY"
         value_source {
           secret_key_ref {

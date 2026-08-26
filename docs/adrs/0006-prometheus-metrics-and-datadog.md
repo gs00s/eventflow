@@ -10,16 +10,16 @@ No metrics exist anywhere in the codebase. Two concrete needs: traffic visibilit
 
 ## Decision
 
-### Library: `prom-client` via `@willsoto/nestjs-prometheus`
+### Library: plain `prom-client`, no DI wrapper
 
-- DI-friendly `Counter` providers; current (last published 2026-03) and Nest 11-compatible.
-- `defaultLabels: { service: 'api', env: env.NODE_ENV }` applied globally, so every metric carries both tags without repeating them per-`Counter`.
-- The module's built-in `/metrics` controller is not used. Cloud Run only routes public traffic to the app container's declared `container_port`; serving `/metrics` there would make it internet-reachable. Instead, `main.ts` exposes the shared `Registry` on a second, internal-only HTTP port via a raw `http.createServer()` — unreachable from outside the instance, reachable by the sidecar over `localhost`.
+- Every metric is a plain `prom-client` `Counter`, exported as a module-scope singleton from `apps/api/src/metrics/*.counter.ts` — same shape everywhere, no exceptions. First cut used `@willsoto/nestjs-prometheus` for `events_requests_total` (DI-injectable providers, `@InjectMetric` in controllers) while `login_attempts_total` stayed plain `prom-client` — `auth.ts` builds its `betterAuth(...)` config at module load, before Nest's container exists, so it can't receive anything via DI. That split was confusing (two different places to define a metric, a stringly-typed `@InjectMetric('name')` token with no compile-time link to the `Counter`'s own `name` field) for a constraint that only ever applied to one of the two metrics. Dropped the wrapper entirely instead of special-casing around it.
+- `apps/api/src/metrics/registry.ts` runs `collectDefaultMetrics()` and `register.setDefaultLabels({ service: 'api', env: env.NODE_ENV })` once, at module scope — every `*.counter.ts` file imports it for the side effect, so default labels apply regardless of import order (ES module caching runs it exactly once per process either way).
+- No `/metrics` controller exists in the Nest app at all now — nothing to disable. `main.ts` exposes the shared `Registry` on a second, internal-only HTTP port via a raw `http.createServer()` instead. Cloud Run only routes public traffic to the app container's declared `container_port`; serving `/metrics` there would make it internet-reachable. The internal port is unreachable from outside the instance, reachable by the sidecar over `localhost`.
 
 ### Metrics
 
 - `events_requests_total{tier}` — `standard|vip`. Inline `.inc()` call in `EventsController.findAll`/`findAllVip` only (not the detail/register routes), on every request regardless of outcome.
-- `login_attempts_total{status}` — `success|failure`. Better Auth's `hooks.after` + `createAuthMiddleware`, checking `ctx.path === '/sign-in/email'` and whether `ctx.context.returned` is an `APIError`. Built as a plain `prom-client` `Counter` at module scope in `auth.ts`, not DI-injected — `auth.ts` constructs its `betterAuth(...)` config at module load, before Nest's container exists, the same reason `PinoLogger.root` (a static accessor) is used there instead of constructor injection.
+- `login_attempts_total{status}` — `success|failure`. Better Auth's `hooks.after` + `createAuthMiddleware`, checking `ctx.path === '/sign-in/email'` and whether `ctx.context.returned` is an `APIError` (via `isAPIError`).
 - The `eventflow.` prefix is applied by the Datadog OpenMetrics check's namespace config, not baked into metric names in application code.
 
 ### `NODE_ENV`
@@ -54,3 +54,4 @@ A real `datadog-agent` container is added to `docker-compose.yml`, forwarding to
 - **OTLP logs ingestion via the Agent** — rejected for now: requires the OpenTelemetry Logs SDK in the app, out of scope until real OTel trace instrumentation is added.
 - **Interceptor-based metric increments** — rejected in favor of inline `.inc()` calls; one abstraction for two call sites isn't worth it.
 - **Enabling the Agent's OTLP receiver preemptively** — rejected; no sender exists yet, add it alongside actual OTel SDK work.
+- **`@willsoto/nestjs-prometheus` (DI-injectable metrics)** — first cut, dropped. Only useful for the one metric that can be DI-injected (`login_attempts_total` can't, per above), so it bought DI ergonomics for one of two metrics at the cost of a second definition pattern, a stringly-typed injection token, a dependency, and a controller that had to be actively neutered since the library always mounts one.
