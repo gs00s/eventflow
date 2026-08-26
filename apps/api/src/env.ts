@@ -11,6 +11,7 @@ const envSchema = dbEnvSchema.extend({
   BETTER_AUTH_URL: z.url().default('http://localhost:9000'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DATADOG_LOG_TCP_PORT: z.coerce.number().default(10514),
+  METRICS_PORT: z.coerce.number().default(9464),
 });
 
 type Env = z.infer<typeof envSchema>;

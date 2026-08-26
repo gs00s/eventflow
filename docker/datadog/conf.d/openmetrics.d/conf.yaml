@@ -1,0 +1,10 @@
+# Scrapes the api app's internal-only metrics port (apps/api/src/metrics/metrics-server.ts).
+# METRICS_SCRAPE_HOST differs by environment (host.docker.internal locally, since the app runs
+# on the host not in this compose stack; localhost on Cloud Run, where containers share the
+# pod's network namespace) — set on the datadog-agent container, not baked into this image.
+# Port must match env.ts's METRICS_PORT default.
+instances:
+  - openmetrics_endpoint: http://%%env_METRICS_SCRAPE_HOST%%:9464/metrics
+    namespace: eventflow
+    metrics:
+      - '*'

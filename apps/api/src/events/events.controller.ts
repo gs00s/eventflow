@@ -10,22 +10,30 @@ import {
 } from '@nestjs/common';
 import type { Event, EventDetail, RegistrationStatus } from '@eventflow/shared-types';
 import { AllowAnonymous, Session, type UserSession } from '@thallesp/nestjs-better-auth';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import type { Counter } from 'prom-client';
 import type { auth } from '../auth/auth';
 import { EventsService } from './events.service';
 
 @Controller('events')
 export class EventsController {
-  constructor(private readonly eventsService: EventsService) {}
+  constructor(
+    private readonly eventsService: EventsService,
+    @InjectMetric('events_requests_total') private readonly eventsRequestsCounter: Counter<'tier'>,
+  ) {}
 
   @AllowAnonymous()
   @Get()
   findAll(): Promise<Event[]> {
+    this.eventsRequestsCounter.inc({ tier: 'standard' });
+
     return this.eventsService.findPublic();
   }
 
   // Must be registered before ':id', or Nest matches "vip" as an :id value.
   @Get('vip')
   async findAllVip(@Session() session: UserSession<typeof auth>): Promise<Event[]> {
+    this.eventsRequestsCounter.inc({ tier: 'vip' });
     if (!session.user.isVip) throw new ForbiddenException();
 
     return this.eventsService.findAllForVip();

@@ -25,6 +25,7 @@ services:
       DD_APM_ENABLED: 'false'
       DD_LOGS_ENABLED: 'true'
       DD_HOSTNAME: eventflow-api-local
+      METRICS_SCRAPE_HOST: host.docker.internal
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     ports:

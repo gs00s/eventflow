@@ -1,5 +1,7 @@
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { getToken } from '@willsoto/nestjs-prometheus';
+import type { Counter } from 'prom-client';
 import { describe, expect, it, vi } from 'vitest';
 import { eventFactory, sessionFor } from '../test/fixtures';
 import { EventsController } from './events.controller';
@@ -8,6 +10,31 @@ import { EventsRepository } from './events.repository';
 import { RegistrationsRepository } from './registrations.repository';
 
 describe('EventsController', () => {
+  it('increments the standard-tier events counter listing public events', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findPublic').mockResolvedValueOnce([]);
+    const counter = module.get<Counter<'tier'>>(getToken('events_requests_total'));
+    const incSpy = vi.spyOn(counter, 'inc');
+    const controller = module.get(EventsController);
+
+    await controller.findAll();
+
+    expect(incSpy).toHaveBeenCalledWith({ tier: 'standard' });
+  });
+
+  it('increments the vip-tier events counter listing the VIP feed, even when forbidden', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const counter = module.get<Counter<'tier'>>(getToken('events_requests_total'));
+    const incSpy = vi.spyOn(counter, 'inc');
+    const controller = module.get(EventsController);
+
+    await expect(controller.findAllVip(sessionFor({ isVip: false }))).rejects.toThrow(
+      ForbiddenException,
+    );
+
+    expect(incSpy).toHaveBeenCalledWith({ tier: 'vip' });
+  });
+
   it('resolves via Nest DI and lists public events', async () => {
     const event = eventFactory.build();
     const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
