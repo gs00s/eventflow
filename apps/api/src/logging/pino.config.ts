@@ -1,11 +1,14 @@
+import pino from 'pino';
 import type { Params } from 'nestjs-pino';
 import type { LoggerOptions } from 'pino';
+import { env } from '../env';
 
 export const pinoOptions: LoggerOptions = {
   // fast-redact paths — req.headers.cookie carries the Better Auth session token; the rest of
   // req/res.headers is just noise (user-agent, Helmet's CSP/HSTS dump, etc.), redacted the same
   // way as everything else.
   redact: ['req.headers', 'res.headers', '*.password', '*.token', '*.secret'],
+  base: { service: 'api', env: env.NODE_ENV },
   formatters: {
     // pino's own `level` field would otherwise be dropped entirely by this hook — keep both:
     // GCP Cloud Logging needs `severity` for its UI, other tooling (Datadog, pino-pretty) expects `level`.
@@ -15,6 +18,27 @@ export const pinoOptions: LoggerOptions = {
   },
 };
 
+// Fans every log line out to stdout (Cloud Logging) and to the Datadog Agent's TCP log source
+// (local docker-compose and the Cloud Run sidecar alike, both reachable over localhost) —
+// skipped in tests, where no agent exists to connect to.
+function createPinoDestination() {
+  return pino.transport({
+    targets: [
+      { target: 'pino/file', options: { destination: 1 } },
+      {
+        target: 'pino-socket',
+        options: {
+          address: '127.0.0.1',
+          port: env.DATADOG_LOG_TCP_PORT,
+          mode: 'tcp',
+          reconnect: true,
+          recovery: true,
+        },
+      },
+    ],
+  });
+}
+
 export const pinoConfig: Params = {
-  pinoHttp: pinoOptions,
+  pinoHttp: env.NODE_ENV === 'test' ? pinoOptions : [pinoOptions, createPinoDestination()],
 };

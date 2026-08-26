@@ -1,0 +1,7 @@
+# Receives pino's parallel log fan-out (apps/api/src/logging/pino.config.ts, pino-socket
+# target). Port must match env.ts's DATADOG_LOG_TCP_PORT default.
+logs:
+  - type: tcp
+    port: 10514
+    service: api
+    source: nodejs
