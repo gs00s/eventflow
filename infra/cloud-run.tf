@@ -61,11 +61,7 @@ resource "google_cloud_run_v2_service" "api" {
 
     containers {
       name  = "datadog-agent"
-      image = "us-docker.pkg.dev/cloudrun/container/hello"
-
-      ports {
-        container_port = 8081
-      }
+      image = "gcr.io/google-containers/pause:3.2"
 
       env {
         name  = "DD_SITE"
