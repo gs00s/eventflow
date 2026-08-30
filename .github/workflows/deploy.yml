@@ -89,63 +89,34 @@ jobs:
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v2
       - run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
-      - id: image
+      - id: images
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
           TAG="${TAG_NAME#v}"
-          IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/eventflow/api:${TAG}"
-          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "api=${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/eventflow/api:${TAG}" >> "$GITHUB_OUTPUT"
+          echo "datadog-agent=${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/eventflow/datadog-agent:${TAG}" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/api/Dockerfile
           push: true
-          tags: ${{ steps.image.outputs.image }}
+          tags: ${{ steps.images.outputs.api }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: docker/datadog
+          push: true
+          tags: ${{ steps.images.outputs.datadog-agent }}
+      # One call for both containers: two separate `update` calls would race and clobber each other.
       - run: |
           gcloud run services update api \
             --region="${GCP_REGION}" \
             --project="${GCP_PROJECT_ID}" \
             --container=api \
-            --image="${{ steps.image.outputs.image }}"
-
-  deploy-datadog-agent:
-    needs: [migrate-and-seed, terraform-apply]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    env:
-      GCP_PROJECT_ID: ${{ needs.terraform-apply.outputs.project_id }}
-      GCP_REGION: ${{ needs.terraform-apply.outputs.region }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v2
-      - run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
-      - id: image
-        env:
-          TAG_NAME: ${{ github.event.release.tag_name }}
-        run: |
-          TAG="${TAG_NAME#v}"
-          IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/eventflow/datadog-agent:${TAG}"
-          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
-        with:
-          context: docker/datadog
-          push: true
-          tags: ${{ steps.image.outputs.image }}
-      - run: |
-          gcloud run services update api \
-            --region="${GCP_REGION}" \
-            --project="${GCP_PROJECT_ID}" \
+            --image="${{ steps.images.outputs.api }}" \
             --container=datadog-agent \
-            --image="${{ steps.image.outputs.image }}"
+            --image="${{ steps.images.outputs.datadog-agent }}"
 
   deploy-web:
     needs: [migrate-and-seed, terraform-apply]
