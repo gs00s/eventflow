@@ -53,18 +53,13 @@ resource "google_cloud_run_v2_service" "api" {
       }
     }
 
-    # Full `datadog-agent` image, not Datadog's `serverless-init` — that pairs with dd-trace and
-    # has no path for scraping custom Prometheus counters. See docs/adrs/0006. conf.d is baked
-    # into the image at docker/datadog/Dockerfile, since Cloud Run has no bind-mount mechanism
-    # for arbitrary config files.
-    #
-    # No startup_probe/depends_on on this container deliberately: terraform apply runs before
-    # deploy-datadog-agent pushes the real image, so a probe hitting the real Agent's healthcheck
-    # would fail forever against the placeholder `hello` image on first rollout, deadlocking the
-    # `api` container that depended on it (see the incident this comment replaced).
     containers {
       name  = "datadog-agent"
       image = "us-docker.pkg.dev/cloudrun/container/hello"
+
+      ports {
+        container_port = 8081
+      }
 
       env {
         name  = "DD_SITE"
