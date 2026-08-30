@@ -111,7 +111,8 @@ jobs:
             --image="${{ steps.image.outputs.image }}"
 
   deploy-datadog-agent:
-    needs: [migrate-and-seed, terraform-apply]
+    # Serialized after deploy-api: concurrent `gcloud run services update` on the same service can clobber each other.
+    needs: [migrate-and-seed, terraform-apply, deploy-api]
     runs-on: ubuntu-latest
     permissions:
       contents: read
