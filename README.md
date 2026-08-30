@@ -27,6 +27,8 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
+`docker compose up` also starts a local Datadog Agent forwarding logs to the `us5` org — needs a root-level `.env` with `DD_API_KEY` set (`cp .env.example .env`, or run `./scripts/setup-datadog.sh` to fetch and set the key, in Secret Manager too). See [ADR 0006](docs/adrs/0006-prometheus-metrics-and-datadog.md).
+
 Seeding also creates two demo accounts:
 
 | Email              | Password       | Role                                     |

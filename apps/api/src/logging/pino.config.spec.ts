@@ -53,4 +53,14 @@ describe('pinoConfig', () => {
 
     expect(logged.body.password).toBe('[Redacted]');
   });
+
+  it('tags every line with the service and env, for Datadog unified tagging', () => {
+    const { logger, lines } = loggerWithCapture();
+
+    logger.info('something happened');
+    const logged = JSON.parse(lines[0]);
+
+    expect(logged.service).toBe('api');
+    expect(logged.env).toBe('test');
+  });
 });

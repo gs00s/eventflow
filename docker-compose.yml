@@ -11,5 +11,23 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql
 
+  # Forwards to the real us5 Datadog org. Requires DD_API_KEY in a root .env (gitignored).
+  # Same custom image (docker/datadog/Dockerfile) as the Cloud Run sidecar — built locally
+  # here rather than pulled, so a conf.d change is picked up with a plain `docker compose up`.
+  # The api app itself runs on the host, not in this compose stack — reached via
+  # host.docker.internal.
+  datadog-agent:
+    build: ./docker/datadog
+    restart: unless-stopped
+    environment:
+      DD_API_KEY: ${DD_API_KEY}
+      DD_SITE: us5.datadoghq.com
+      DD_APM_ENABLED: 'false'
+      DD_LOGS_ENABLED: 'true'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    ports:
+      - '10514:10514'
+
 volumes:
   postgres-data:
