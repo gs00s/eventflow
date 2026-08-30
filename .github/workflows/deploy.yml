@@ -105,10 +105,10 @@ jobs:
           tags: ${{ steps.image.outputs.image }}
       - run: |
           gcloud run services update api \
-            --image="${{ steps.image.outputs.image }}" \
-            --container=api \
             --region="${GCP_REGION}" \
-            --project="${GCP_PROJECT_ID}"
+            --project="${GCP_PROJECT_ID}" \
+            --container=api \
+            --image="${{ steps.image.outputs.image }}"
 
   deploy-datadog-agent:
     needs: [migrate-and-seed, terraform-apply]
@@ -142,10 +142,10 @@ jobs:
           tags: ${{ steps.image.outputs.image }}
       - run: |
           gcloud run services update api \
-            --image="${{ steps.image.outputs.image }}" \
-            --container=datadog-agent \
             --region="${GCP_REGION}" \
-            --project="${GCP_PROJECT_ID}"
+            --project="${GCP_PROJECT_ID}" \
+            --container=datadog-agent \
+            --image="${{ steps.image.outputs.image }}"
 
   deploy-web:
     needs: [migrate-and-seed, terraform-apply]
