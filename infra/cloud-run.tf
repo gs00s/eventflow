@@ -78,6 +78,12 @@ resource "google_cloud_run_v2_service" "api" {
         value = "true"
       }
 
+      # Cloud Run exposes no reliable host metadata; the Agent exits without this set.
+      env {
+        name  = "DD_HOSTNAME"
+        value = "eventflow-api"
+      }
+
       env {
         name = "DD_API_KEY"
         value_source {

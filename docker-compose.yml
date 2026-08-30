@@ -24,6 +24,7 @@ services:
       DD_SITE: us5.datadoghq.com
       DD_APM_ENABLED: 'false'
       DD_LOGS_ENABLED: 'true'
+      DD_HOSTNAME: eventflow-api-local
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     ports:
