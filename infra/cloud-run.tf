@@ -32,6 +32,12 @@ resource "google_cloud_run_v2_service" "api" {
         value = "production"
       }
 
+      # Must match docker/datadog/conf.d/tcp_logs.d/conf.yaml's hardcoded port.
+      env {
+        name  = "DATADOG_LOG_TCP_PORT"
+        value = "10514"
+      }
+
       env {
         name = "DATABASE_URL"
         value_source {

@@ -18,9 +18,7 @@ export const pinoOptions: LoggerOptions = {
   },
 };
 
-// Fans every log line out to stdout (Cloud Logging) and to the Datadog Agent's TCP log source
-// (local docker-compose and the Cloud Run sidecar alike, both reachable over localhost) —
-// skipped in tests, where no agent exists to connect to.
+// Fans out to stdout and the Datadog Agent's TCP log source; skipped in tests, no agent to reach.
 function createPinoDestination() {
   return pino.transport({
     targets: [
