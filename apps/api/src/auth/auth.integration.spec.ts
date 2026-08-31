@@ -2,8 +2,15 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { user } from '../db/schemas';
+import { loginAttemptsCounter } from '../metrics/login-attempts.counter';
 import { createTestApp } from '../test/app-harness';
 import { clearTable } from '../test/db';
+
+async function loginAttemptCount(status: 'success' | 'failure') {
+  const metric = await loginAttemptsCounter.get();
+
+  return metric.values.find((value) => value.labels.status === status)?.value ?? 0;
+}
 
 describe('Auth (integration)', () => {
   let app: NestExpressApplication;
@@ -75,6 +82,7 @@ describe('Auth (integration)', () => {
 
     it('starts a session for correct credentials', async () => {
       const agent = request.agent(app.getHttpServer());
+      const countBefore = await loginAttemptCount('success');
 
       const response = await agent.post('/api/auth/sign-in/email').send(credentials);
 
@@ -89,24 +97,31 @@ describe('Auth (integration)', () => {
         name: 'Login User',
         isVip: false,
       });
+      expect(await loginAttemptCount('success')).toBe(countBefore + 1);
     });
 
     it('rejects an incorrect password', async () => {
+      const countBefore = await loginAttemptCount('failure');
+
       const response = await request(app.getHttpServer()).post('/api/auth/sign-in/email').send({
         email: credentials.email,
         password: 'the-wrong-password',
       });
 
       expect(response.status).toBe(401);
+      expect(await loginAttemptCount('failure')).toBe(countBefore + 1);
     });
 
     it('rejects an unknown email', async () => {
+      const countBefore = await loginAttemptCount('failure');
+
       const response = await request(app.getHttpServer()).post('/api/auth/sign-in/email').send({
         email: 'no-such-user@example.com',
         password: 'password1234',
       });
 
       expect(response.status).toBe(401);
+      expect(await loginAttemptCount('failure')).toBe(countBefore + 1);
     });
   });
 

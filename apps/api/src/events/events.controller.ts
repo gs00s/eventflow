@@ -11,6 +11,7 @@ import {
 import type { Event, EventDetail, RegistrationStatus } from '@eventflow/shared-types';
 import { AllowAnonymous, Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type { auth } from '../auth/auth';
+import { eventsRequestsCounter } from '../metrics/events-requests.counter';
 import { EventsService } from './events.service';
 
 @Controller('events')
@@ -20,12 +21,15 @@ export class EventsController {
   @AllowAnonymous()
   @Get()
   findAll(): Promise<Event[]> {
+    eventsRequestsCounter.inc({ tier: 'standard' });
+
     return this.eventsService.findPublic();
   }
 
   // Must be registered before ':id', or Nest matches "vip" as an :id value.
   @Get('vip')
   async findAllVip(@Session() session: UserSession<typeof auth>): Promise<Event[]> {
+    eventsRequestsCounter.inc({ tier: 'vip' });
     if (!session.user.isVip) throw new ForbiddenException();
 
     return this.eventsService.findAllForVip();
