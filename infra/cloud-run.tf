@@ -22,9 +22,12 @@ resource "google_cloud_run_v2_service" "api" {
         value = "https://${google_firebase_hosting_site.app.site_id}.web.app"
       }
 
+      # No path: better-auth only appends its default basePath (/api/auth) to a
+      # path-less baseURL. A baseURL with a path (e.g. trailing "/api") is used
+      # as-is, which breaks route matching against where the Nest wrapper mounts it.
       env {
         name  = "BETTER_AUTH_URL"
-        value = "https://${google_firebase_hosting_site.app.site_id}.web.app/api"
+        value = "https://${google_firebase_hosting_site.app.site_id}.web.app"
       }
 
       env {
