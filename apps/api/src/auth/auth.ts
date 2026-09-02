@@ -12,6 +12,16 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
   trustedOrigins: [env.CORS_ORIGIN],
+  // Firebase Hosting only forwards a cookie literally named "__session" to Cloud Run (https://firebase.google.com/docs/hosting/manage-cache).
+  advanced: {
+    useSecureCookies: false,
+    cookies: {
+      session_token: {
+        name: '__session',
+        attributes: { secure: env.NODE_ENV === 'production' },
+      },
+    },
+  },
   logger: {
     // PinoLogger.root is a static accessor, not DI-injected — this module loads (and this
     // config object is built) before Nest's container exists, but the callback itself only
