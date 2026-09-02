@@ -6,5 +6,6 @@
 instances:
   - openmetrics_endpoint: http://%%env_METRICS_SCRAPE_HOST%%:9464/metrics
     namespace: eventflow
+    # Datadog compiles each entry as a regex, not a glob — bare '*' is invalid ("nothing to repeat").
     metrics:
-      - '*'
+      - '.*'
