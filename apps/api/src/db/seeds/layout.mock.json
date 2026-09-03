@@ -64,9 +64,7 @@
           "id": "de0f7ab4-72ea-4f21-9bdf-b0769dca7c6f",
           "type": "SpeakerCard",
           "data": {
-            "name": "Dr. Jane Doe",
-            "title": "VP of Engineering",
-            "image": "..."
+            "id": "dfed351e-0953-4d31-9856-1f56bcbfe939"
           },
           "components": []
         }

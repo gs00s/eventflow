@@ -56,13 +56,12 @@ export const eventSessionSchema = z.object({
 
 export type EventSession = z.infer<typeof eventSessionSchema>;
 
+// Only the speaker id is stored; name/title/image are resolved from the event's speaker list at render time.
 const speakerCardSchema = z.object({
   id: z.string(),
   type: z.literal('SpeakerCard'),
   data: z.object({
-    name: z.string(),
-    title: z.string(),
-    image: z.string(),
+    id: z.string(),
   }),
   components: z.tuple([]),
 });

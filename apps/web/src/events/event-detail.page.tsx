@@ -45,6 +45,7 @@ export function EventDetailPage() {
               components={
                 data.layout?.components ?? buildFallbackLayout(data.sessions, data.speakers)
               }
+              speakers={data.speakers}
             />
           </div>
         </>

@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { LayoutComponent } from '@eventflow/shared-types';
+import type { LayoutComponent, Speaker } from '@eventflow/shared-types';
 import { Heading } from './heading';
 import { Paragraph } from './paragraph';
 import { Section } from './section';
@@ -10,6 +10,7 @@ import { SpeakerList } from './speaker-list';
 export const layoutComponentRegistry: {
   [K in LayoutComponent['type']]: ComponentType<{
     component: Extract<LayoutComponent, { type: K }>;
+    speakers: Speaker[];
   }>;
 } = {
   Section,
