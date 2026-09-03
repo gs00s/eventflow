@@ -22,7 +22,8 @@ services:
     environment:
       DD_API_KEY: ${DD_API_KEY}
       DD_SITE: us5.datadoghq.com
-      DD_APM_ENABLED: 'false'
+      DD_APM_ENABLED: 'true'
+      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT: '0.0.0.0:4318'
       DD_LOGS_ENABLED: 'true'
       DD_HOSTNAME: eventflow-api-local
       METRICS_SCRAPE_HOST: host.docker.internal
@@ -30,6 +31,7 @@ services:
       - 'host.docker.internal:host-gateway'
     ports:
       - '10514:10514'
+      - '4318:4318'
 
 volumes:
   postgres-data:
