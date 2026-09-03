@@ -4,7 +4,6 @@ import { speakerFactory } from './speaker';
 
 export const layoutFactory = Factory.define<Layout>(({ sequence }) => {
   const sessionSpeaker = speakerFactory.build({ name: 'Dr. Jane Doe' });
-  const listSpeaker = speakerFactory.build({ name: 'Alex Rivera' });
 
   return {
     id: `layout-${sequence}`,
@@ -55,7 +54,7 @@ export const layoutFactory = Factory.define<Layout>(({ sequence }) => {
           {
             id: `speaker-card-${sequence}`,
             type: 'SpeakerCard',
-            data: { name: listSpeaker.name, title: listSpeaker.title, image: listSpeaker.image },
+            data: { id: `featured-speaker-${sequence}` },
             components: [],
           },
         ],

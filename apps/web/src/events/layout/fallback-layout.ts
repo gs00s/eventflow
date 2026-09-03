@@ -41,7 +41,7 @@ export function buildFallbackLayout(
       components: speakers.map((speaker) => ({
         id: speaker.id,
         type: 'SpeakerCard',
-        data: { name: speaker.name, title: speaker.title, image: speaker.image },
+        data: { id: speaker.id },
         components: [],
       })),
     });
