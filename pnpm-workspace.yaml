@@ -4,6 +4,10 @@ packages:
 
 minimumReleaseAge: 1440 # 1 day
 blockExoticSubdeps: true
+
+overrides:
+  # GHSA-jqff-g426-hqxp and siblings: transitive via @nestjs/cli, firebase-tools, shadcn — none of them pin a patched ajv/fast-uri yet.
+  fast-uri: '^3.1.6'
 allowBuilds:
   '@swc/core': true
   cpu-features: true

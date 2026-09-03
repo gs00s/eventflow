@@ -31,4 +31,4 @@ COPY --from=builder /app/apps/api/dist ./apps/api/dist
 
 WORKDIR /app/apps/api
 EXPOSE 8080
-CMD ["node", "dist/src/main.js"]
+CMD ["node", "-r", "./dist/src/tracing.js", "dist/src/main.js"]

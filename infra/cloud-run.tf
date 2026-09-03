@@ -73,7 +73,12 @@ resource "google_cloud_run_v2_service" "api" {
 
       env {
         name  = "DD_APM_ENABLED"
-        value = "false"
+        value = "true"
+      }
+
+      env {
+        name  = "DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT"
+        value = "0.0.0.0:4318"
       }
 
       env {
