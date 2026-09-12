@@ -1,8 +1,12 @@
 import { boolean, date, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { layouts } from './layouts';
+import { user } from './user';
 
 export const events = pgTable('events', {
   id: uuid().primaryKey().defaultRandom(),
+  ownerId: text('owner_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
   title: text().notNull(),
   subtitle: text().notNull(),
   description: text().notNull(),

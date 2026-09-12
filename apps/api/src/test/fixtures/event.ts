@@ -3,6 +3,7 @@ import { Factory } from 'fishery';
 
 export interface EventRow {
   id: string;
+  ownerId: string;
   title: string;
   subtitle: string;
   description: string;
@@ -22,6 +23,7 @@ export interface EventRow {
 
 export const eventFactory = Factory.define<EventRow>(() => ({
   id: faker.string.uuid(),
+  ownerId: faker.string.uuid(),
   title: 'AWS Cloud Innovators Summit',
   subtitle: 'Explore the future of cloud computing',
   description: 'A one-day event focused on cloud, AI/ML, and serverless technologies.',

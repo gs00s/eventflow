@@ -9,8 +9,8 @@ import { RegistrationsRepository } from './registrations.repository';
 describe('RegistrationsRepository (integration)', () => {
   let module: TestingModule;
   let repository: RegistrationsRepository;
-  const event = eventFactory.build();
   const registrant = userFactory.build();
+  const event = eventFactory.build({ ownerId: registrant.id });
 
   beforeAll(async () => {
     module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
@@ -19,8 +19,8 @@ describe('RegistrationsRepository (integration)', () => {
     const dbService = module.get(DbService);
     await dbService.db.delete(registrations);
     await dbService.db.delete(events);
-    await dbService.db.insert(events).values(event);
     await dbService.db.insert(user).values(registrant);
+    await dbService.db.insert(events).values(event);
   });
 
   afterAll(async () => {
@@ -42,7 +42,7 @@ describe('RegistrationsRepository (integration)', () => {
   });
 
   it('does not create a duplicate registration for the same user and event', async () => {
-    const anotherEvent = eventFactory.build();
+    const anotherEvent = eventFactory.build({ ownerId: registrant.id });
     await module.get(DbService).db.insert(events).values(anotherEvent);
 
     const first = await repository.create(registrant.id, anotherEvent.id);
@@ -53,7 +53,7 @@ describe('RegistrationsRepository (integration)', () => {
   });
 
   it('reports false deleting a registration that does not exist', async () => {
-    const anotherEvent = eventFactory.build();
+    const anotherEvent = eventFactory.build({ ownerId: registrant.id });
     await module.get(DbService).db.insert(events).values(anotherEvent);
 
     const result = await repository.delete(registrant.id, anotherEvent.id);
@@ -62,7 +62,7 @@ describe('RegistrationsRepository (integration)', () => {
   });
 
   it('deletes an existing registration and reports it as gone afterwards', async () => {
-    const anotherEvent = eventFactory.build();
+    const anotherEvent = eventFactory.build({ ownerId: registrant.id });
     await module.get(DbService).db.insert(events).values(anotherEvent);
     await repository.create(registrant.id, anotherEvent.id);
 

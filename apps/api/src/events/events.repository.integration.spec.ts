@@ -1,17 +1,24 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DbService } from '../db/db.service';
-import { eventSessions, events, layouts, speakers } from '../db/schemas';
-import { eventFactory, eventSessionFactory, layoutFactory, speakerFactory } from '../test/fixtures';
+import { eventSessions, events, layouts, speakers, user } from '../db/schemas';
+import {
+  eventFactory,
+  eventSessionFactory,
+  layoutFactory,
+  speakerFactory,
+  userFactory,
+} from '../test/fixtures';
 import { EventsModule } from './events.module';
 import { EventsRepository } from './events.repository';
 
 describe('EventsRepository (integration)', () => {
   let module: TestingModule;
   let repository: EventsRepository;
+  const owner = userFactory.build();
   const layout = layoutFactory.build();
-  const event = eventFactory.build({ layoutId: layout.id });
-  const vipEvent = eventFactory.build({ isVip: true });
+  const event = eventFactory.build({ ownerId: owner.id, layoutId: layout.id });
+  const vipEvent = eventFactory.build({ ownerId: owner.id, isVip: true });
   const speaker = speakerFactory.build();
   const session = eventSessionFactory.build({ eventId: event.id, speakerId: speaker.id });
 
@@ -24,6 +31,7 @@ describe('EventsRepository (integration)', () => {
     await dbService.db.delete(events);
     await dbService.db.delete(layouts);
     await dbService.db.delete(speakers);
+    await dbService.db.insert(user).values(owner);
     await dbService.db.insert(speakers).values(speaker);
     await dbService.db.insert(layouts).values(layout);
     await dbService.db.insert(events).values([event, vipEvent]);
