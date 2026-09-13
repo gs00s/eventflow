@@ -9,13 +9,14 @@ import { speakers } from './db/schemas/speakers';
 import { user } from './db/schemas/user';
 import { env } from './env';
 import { createTestApp } from './test/app-harness';
-import { eventFactory, eventSessionFactory, speakerFactory } from './test/fixtures';
+import { eventFactory, eventSessionFactory, speakerFactory, userFactory } from './test/fixtures';
 
 describe('App (integration)', () => {
   let app: NestExpressApplication;
+  const owner = userFactory.build();
   const speaker = speakerFactory.build();
-  const event = eventFactory.build();
-  const vipEvent = eventFactory.build({ isVip: true });
+  const event = eventFactory.build({ ownerId: owner.id });
+  const vipEvent = eventFactory.build({ ownerId: owner.id, isVip: true });
   const session = eventSessionFactory.build({ eventId: event.id, speakerId: speaker.id });
   const vipSession = eventSessionFactory.build({ eventId: vipEvent.id, speakerId: speaker.id });
 
@@ -24,6 +25,7 @@ describe('App (integration)', () => {
     await db.delete(eventSessions);
     await db.delete(events);
     await db.delete(speakers);
+    await db.insert(user).values(owner);
     await db.insert(speakers).values(speaker);
     await db.insert(events).values([event, vipEvent]);
     await db.insert(eventSessions).values([session, vipSession]);

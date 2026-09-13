@@ -6,13 +6,20 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eventSessions, events, layouts, registrations, speakers, user } from '../db/schemas';
 import { env } from '../env';
 import { createTestApp } from '../test/app-harness';
-import { eventFactory, eventSessionFactory, layoutFactory, speakerFactory } from '../test/fixtures';
+import {
+  eventFactory,
+  eventSessionFactory,
+  layoutFactory,
+  speakerFactory,
+  userFactory,
+} from '../test/fixtures';
 
 describe('Events (integration)', () => {
   let app: NestExpressApplication;
+  const owner = userFactory.build();
   const layout = layoutFactory.build();
-  const event = eventFactory.build({ layoutId: layout.id });
-  const vipEvent = eventFactory.build({ isVip: true });
+  const event = eventFactory.build({ ownerId: owner.id, layoutId: layout.id });
+  const vipEvent = eventFactory.build({ ownerId: owner.id, isVip: true });
   const speaker = speakerFactory.build();
   const session = eventSessionFactory.build({ eventId: event.id, speakerId: speaker.id });
 
@@ -23,6 +30,7 @@ describe('Events (integration)', () => {
     await db.delete(events);
     await db.delete(layouts);
     await db.delete(speakers);
+    await db.insert(user).values(owner);
     await db.insert(speakers).values(speaker);
     await db.insert(layouts).values(layout);
     await db.insert(events).values([event, vipEvent]);

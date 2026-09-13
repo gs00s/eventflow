@@ -3,12 +3,17 @@ import { eventSessions } from './event-sessions';
 import { events } from './events';
 import { layouts } from './layouts';
 import { speakers } from './speakers';
+import { user } from './user';
 
 export const eventRelations = relations(events, ({ many, one }) => ({
   sessions: many(eventSessions),
   layout: one(layouts, {
     fields: [events.layoutId],
     references: [layouts.id],
+  }),
+  owner: one(user, {
+    fields: [events.ownerId],
+    references: [user.id],
   }),
 }));
 

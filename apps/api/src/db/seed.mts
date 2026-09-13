@@ -93,9 +93,19 @@ async function seed() {
 
   await db.insert(layouts).values({ id: layoutData.id, components: layoutData.components });
 
+  await createUser(DEMO_USER_EMAIL, 'Demo Member');
+
+  // isVip isn't a sign-up input (ADR 0002/0003) — flipped directly after creation.
+  await createUser(VIP_USER_EMAIL, 'VIP Member');
+  await db.update(user).set({ isVip: true }).where(eq(user.email, VIP_USER_EMAIL));
+
+  const vipUser = await sharedDb.query.user.findFirst({ where: eq(user.email, VIP_USER_EMAIL) });
+  if (!vipUser) throw new Error(`Seed failed: ${VIP_USER_EMAIL} was not created.`);
+
   await db.insert(events).values(
     eventsData.map((eventData) => ({
       id: eventData.id,
+      ownerId: vipUser.id,
       title: eventData.title,
       subtitle: eventData.subtitle,
       description: eventData.description,
@@ -128,12 +138,6 @@ async function seed() {
       })),
     ),
   );
-
-  await createUser(DEMO_USER_EMAIL, 'Demo Member');
-
-  // isVip isn't a sign-up input (ADR 0002/0003) — flipped directly after creation.
-  await createUser(VIP_USER_EMAIL, 'VIP Member');
-  await db.update(user).set({ isVip: true }).where(eq(user.email, VIP_USER_EMAIL));
 
   await db.$client.end();
   await sharedDb.$client.end();
