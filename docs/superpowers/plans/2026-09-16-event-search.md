@@ -21,7 +21,7 @@
 - Hero and search-page search boxes are **submit-only** (Enter or button click) — no live/debounced search-as-you-type.
 - Submit is disabled client-side whenever the trimmed query is empty.
 - `/search` with a missing or empty `q` renders an in-page empty state ("enter a search term above") — it does **not** redirect to `/`.
-- Testing conventions (project CLAUDE.md): co-located `.spec.ts(x)` files, Arrange/Act/Assert with a blank line between sections, capture the act result in a variable. Repositories are integration-tested only (Testcontainers, real Postgres) — no repository unit tests. Services/controllers are unit-tested by spying on the layer *below* them (controller tests spy on the repository, not the service), built via `Test.createTestingModule({ imports: [EventsModule] })` + `module.get(...)`. One integration test per resource for the happy path already exists (`events.integration.spec.ts`) — extend it, don't duplicate it. Frontend tests are integration-style by default (`setupRouterTest()` / `renderApp()` + MSW at the HTTP boundary); isolated `render()` unit tests are reserved for pure prop/callback-driven components with no router/data-fetching dependency (mirrors `LoginForm`/`LoginPage`).
+- Testing conventions (project CLAUDE.md): co-located `.spec.ts(x)` files, Arrange/Act/Assert with a blank line between sections, capture the act result in a variable. Repositories are integration-tested only (Testcontainers, real Postgres) — no repository unit tests. Services/controllers are unit-tested by spying on the layer _below_ them (controller tests spy on the repository, not the service), built via `Test.createTestingModule({ imports: [EventsModule] })` + `module.get(...)`. One integration test per resource for the happy path already exists (`events.integration.spec.ts`) — extend it, don't duplicate it. Frontend tests are integration-style by default (`setupRouterTest()` / `renderApp()` + MSW at the HTTP boundary); isolated `render()` unit tests are reserved for pure prop/callback-driven components with no router/data-fetching dependency (mirrors `LoginForm`/`LoginPage`).
 - Package manager is pnpm; workspace packages are `@eventflow/api` and `@eventflow/web`. Run scoped commands as `pnpm --filter @eventflow/api <script> -- <args>` / `pnpm --filter @eventflow/web <script> -- <args>`.
 
 ---
@@ -29,6 +29,7 @@
 ## File Structure
 
 **Backend** (`apps/api/src/`)
+
 - Modify `events/events.repository.ts` — `q` param + ILIKE matching on `findAll`/`findPublic`.
 - Modify `db/schemas/events.ts` — add two `pg_trgm` GIN indexes (`title`, `description`).
 - Create `db/migrations/0008_add_trgm_search_indexes_to_events.sql` (generated + hand-patched for the extension) and its `meta/` entries (generated).
@@ -37,6 +38,7 @@
 - Modify `events/events.repository.integration.spec.ts`, `events/events.service.spec.ts`, `events/events.controller.spec.ts`, `events/events.integration.spec.ts` — add search coverage.
 
 **Frontend** (`apps/web/src/`)
+
 - Modify `lib/api.ts` — `fetchEvents`/`fetchEventsVip` accept an optional `q`.
 - Create `events/components/event-search-form.tsx` — presentational search box (input + submit), reused by both the hero and the search page.
 - Create `events/components/event-search-form.spec.tsx` — isolated unit test (mirrors `login-form.spec.tsx`).
@@ -52,10 +54,12 @@
 ### Task 1: `EventsRepository` — filter by search query
 
 **Files:**
+
 - Modify: `apps/api/src/events/events.repository.ts`
 - Test: `apps/api/src/events/events.repository.integration.spec.ts`
 
 **Interfaces:**
+
 - Consumes: `events` table from `../db/schemas` (existing), `DbService` (existing).
 - Produces: `EventsRepository.findAll(q?: string)` and `EventsRepository.findPublic(q?: string)` — both now accept an optional case-insensitive substring filter matched against `title` OR `description`. Return type unchanged (array of `typeof events.$inferSelect`). `EventsService` (Task 3) calls these with the viewer's raw query string.
 
@@ -272,10 +276,12 @@ git commit -m "feat(100): filter events by search query in the repository"
 ### Task 2: `pg_trgm` GIN indexes for search
 
 **Files:**
+
 - Modify: `apps/api/src/db/schemas/events.ts`
 - Create: `apps/api/src/db/migrations/0008_add_trgm_search_indexes_to_events.sql` (+ generated `meta/` entries)
 
 **Interfaces:**
+
 - Consumes: nothing new — this only adds indexes backing the `ILIKE` queries from Task 1. No code depends on this task's output directly; it's a performance/infra task with no behavior change.
 - Produces: `pg_trgm` extension enabled + GIN indexes on `events.title` and `events.description`, applied automatically by `testcontainers-global-setup.ts`'s `migrate()` call on the next test run.
 
@@ -352,10 +358,12 @@ git commit -m "feat(100): add pg_trgm GIN indexes on events title and descriptio
 ### Task 3: `EventsService` — thread the query through
 
 **Files:**
+
 - Modify: `apps/api/src/events/events.service.ts`
 - Test: `apps/api/src/events/events.service.spec.ts`
 
 **Interfaces:**
+
 - Consumes: `EventsRepository.findPublic(q?: string)` / `EventsRepository.findAll(q?: string)` from Task 1.
 - Produces: `EventsService.findPublic(q?: string): Promise<Event[]>` and `EventsService.findAllForVip(q?: string): Promise<Event[]>` — same DTO mapping as before (`toEvent`), just passing `q` through. `EventsController` (Task 4) calls these with the raw query param.
 
@@ -364,27 +372,27 @@ git commit -m "feat(100): add pg_trgm GIN indexes on events title and descriptio
 In `apps/api/src/events/events.service.spec.ts`, add these two `it` blocks directly after the existing `'maps every repository row to event DTOs for the VIP list'` test (inside the same `describe('EventsService', ...)` block):
 
 ```ts
-  it('passes the search query through to the public repository call', async () => {
-    const row = eventFactory.build();
-    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
-    const repoSpy = vi.spyOn(module.get(EventsRepository), 'findPublic').mockResolvedValue([row]);
-    const service = module.get(EventsService);
+it('passes the search query through to the public repository call', async () => {
+  const row = eventFactory.build();
+  const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+  const repoSpy = vi.spyOn(module.get(EventsRepository), 'findPublic').mockResolvedValue([row]);
+  const service = module.get(EventsService);
 
-    await service.findPublic('kubernetes');
+  await service.findPublic('kubernetes');
 
-    expect(repoSpy).toHaveBeenCalledWith('kubernetes');
-  });
+  expect(repoSpy).toHaveBeenCalledWith('kubernetes');
+});
 
-  it('passes the search query through to the VIP repository call', async () => {
-    const row = eventFactory.build();
-    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
-    const repoSpy = vi.spyOn(module.get(EventsRepository), 'findAll').mockResolvedValue([row]);
-    const service = module.get(EventsService);
+it('passes the search query through to the VIP repository call', async () => {
+  const row = eventFactory.build();
+  const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+  const repoSpy = vi.spyOn(module.get(EventsRepository), 'findAll').mockResolvedValue([row]);
+  const service = module.get(EventsService);
 
-    await service.findAllForVip('kubernetes');
+  await service.findAllForVip('kubernetes');
 
-    expect(repoSpy).toHaveBeenCalledWith('kubernetes');
-  });
+  expect(repoSpy).toHaveBeenCalledWith('kubernetes');
+});
 ```
 
 - [ ] **Step 2: Run the tests to confirm they fail**
@@ -427,10 +435,12 @@ git commit -m "feat(100): thread the search query through EventsService"
 ### Task 4: `EventsController` — accept `?q=`
 
 **Files:**
+
 - Modify: `apps/api/src/events/events.controller.ts`
 - Test: `apps/api/src/events/events.controller.spec.ts`
 
 **Interfaces:**
+
 - Consumes: `EventsService.findPublic(q?: string)` / `EventsService.findAllForVip(q?: string)` from Task 3.
 - Produces: `GET /api/events?q=` and `GET /api/events/vip?q=` — same response shape and VIP gating as before, now search-filtered when `q` is present. Task 5's integration tests hit these HTTP routes directly.
 
@@ -439,25 +449,25 @@ git commit -m "feat(100): thread the search query through EventsService"
 In `apps/api/src/events/events.controller.spec.ts`, add these two `it` blocks directly after the existing `'resolves via Nest DI and lists public events'` test:
 
 ```ts
-  it('passes the q query param through to the public repository call', async () => {
-    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
-    const repoSpy = vi.spyOn(module.get(EventsRepository), 'findPublic').mockResolvedValueOnce([]);
-    const controller = module.get(EventsController);
+it('passes the q query param through to the public repository call', async () => {
+  const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+  const repoSpy = vi.spyOn(module.get(EventsRepository), 'findPublic').mockResolvedValueOnce([]);
+  const controller = module.get(EventsController);
 
-    await controller.findAll('kubernetes');
+  await controller.findAll('kubernetes');
 
-    expect(repoSpy).toHaveBeenCalledWith('kubernetes');
-  });
+  expect(repoSpy).toHaveBeenCalledWith('kubernetes');
+});
 
-  it('passes the q query param through to the VIP repository call', async () => {
-    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
-    const repoSpy = vi.spyOn(module.get(EventsRepository), 'findAll').mockResolvedValueOnce([]);
-    const controller = module.get(EventsController);
+it('passes the q query param through to the VIP repository call', async () => {
+  const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+  const repoSpy = vi.spyOn(module.get(EventsRepository), 'findAll').mockResolvedValueOnce([]);
+  const controller = module.get(EventsController);
 
-    await controller.findAllVip(sessionFor({ isVip: true }), 'kubernetes');
+  await controller.findAllVip(sessionFor({ isVip: true }), 'kubernetes');
 
-    expect(repoSpy).toHaveBeenCalledWith('kubernetes');
-  });
+  expect(repoSpy).toHaveBeenCalledWith('kubernetes');
+});
 ```
 
 - [ ] **Step 2: Run the tests to confirm they fail**
@@ -530,9 +540,11 @@ git commit -m "feat(100): accept a q query param on the events list routes"
 ### Task 5: End-to-end search coverage
 
 **Files:**
+
 - Modify: `apps/api/src/events/events.integration.spec.ts`
 
 **Interfaces:**
+
 - Consumes: `GET /api/events?q=` and `GET /api/events/vip?q=` from Task 4, over real HTTP via `supertest`.
 - Produces: nothing consumed downstream — this is the backend's final proof that search works end-to-end (routing, auth, repository, indexes) before the frontend is wired up.
 
@@ -543,53 +555,53 @@ In `apps/api/src/events/events.integration.spec.ts`:
 1. Add a `searchableEvent` fixture next to the existing `event`/`vipEvent` declarations (after line 22):
 
 ```ts
-  const searchableEvent = eventFactory.build({
-    ownerId: owner.id,
-    title: 'Kubernetes Deep Dive Workshop',
-  });
-  const searchableVipEvent = eventFactory.build({
-    ownerId: owner.id,
-    isVip: true,
-    description: 'An exclusive session on kubernetes adoption at scale.',
-  });
+const searchableEvent = eventFactory.build({
+  ownerId: owner.id,
+  title: 'Kubernetes Deep Dive Workshop',
+});
+const searchableVipEvent = eventFactory.build({
+  ownerId: owner.id,
+  isVip: true,
+  description: 'An exclusive session on kubernetes adoption at scale.',
+});
 ```
 
 2. Include both in the `beforeAll` insert (replace line 36):
 
 ```ts
-    await db.insert(events).values([event, vipEvent, searchableEvent, searchableVipEvent]);
+await db.insert(events).values([event, vipEvent, searchableEvent, searchableVipEvent]);
 ```
 
 3. Add these tests directly after the existing `'GET /api/events returns only non-VIP events'` test:
 
 ```ts
-  it('GET /api/events?q= filters non-VIP events by a title/description match', async () => {
-    const response = await request(app.getHttpServer()).get('/api/events?q=kubernetes');
+it('GET /api/events?q= filters non-VIP events by a title/description match', async () => {
+  const response = await request(app.getHttpServer()).get('/api/events?q=kubernetes');
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual([expect.objectContaining({ id: searchableEvent.id })]);
-  });
+  expect(response.status).toBe(200);
+  expect(response.body).toEqual([expect.objectContaining({ id: searchableEvent.id })]);
+});
 
-  it('GET /api/events?q= returns an empty array when nothing matches', async () => {
-    const response = await request(app.getHttpServer()).get('/api/events?q=nonexistent-term-xyz');
+it('GET /api/events?q= returns an empty array when nothing matches', async () => {
+  const response = await request(app.getHttpServer()).get('/api/events?q=nonexistent-term-xyz');
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual([]);
-  });
+  expect(response.status).toBe(200);
+  expect(response.body).toEqual([]);
+});
 
-  it('GET /api/events/vip?q= filters every event by a title/description match for a VIP user', async () => {
-    const agent = await vipAgent();
+it('GET /api/events/vip?q= filters every event by a title/description match for a VIP user', async () => {
+  const agent = await vipAgent();
 
-    const response = await agent.get('/api/events/vip?q=kubernetes');
+  const response = await agent.get('/api/events/vip?q=kubernetes');
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ id: searchableEvent.id }),
-        expect.objectContaining({ id: searchableVipEvent.id }),
-      ]),
-    );
-  });
+  expect(response.status).toBe(200);
+  expect(response.body).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ id: searchableEvent.id }),
+      expect.objectContaining({ id: searchableVipEvent.id }),
+    ]),
+  );
+});
 ```
 
 - [ ] **Step 2: Run the tests to confirm they pass**
@@ -611,10 +623,12 @@ git commit -m "test(100): cover event search end-to-end over HTTP"
 ### Task 6: `EventSearchForm` — presentational search box
 
 **Files:**
+
 - Create: `apps/web/src/events/components/event-search-form.tsx`
 - Test: `apps/web/src/events/components/event-search-form.spec.tsx`
 
 **Interfaces:**
+
 - Consumes: `Field`, `FieldGroup`, `FieldLabel` from `@/components/ui/field`; `Input` from `@/components/ui/input`; `Button` from `@/components/ui/button`; `useForm` from `@tanstack/react-form`; `z` from `zod`.
 - Produces: `EventSearchForm({ defaultValue?: string; onSubmit: (query: string) => void })` — a controlled, labelled ("Search events") text input + submit button. Submit is disabled while the trimmed value is empty; `onSubmit` fires with the trimmed, non-empty query. Consumed by `Hero` (Task 7) and `SearchPage` (Task 9).
 
@@ -766,11 +780,13 @@ git commit -m "feat(100): add EventSearchForm"
 ### Task 7: `Hero` on the landing page
 
 **Files:**
+
 - Create: `apps/web/src/events/components/hero.tsx`
 - Modify: `apps/web/src/events/events.page.tsx`
 - Test: `apps/web/src/events/events.page.spec.tsx`
 
 **Interfaces:**
+
 - Consumes: `EventSearchForm` from Task 6; `useNavigate` from `@tanstack/react-router` (targets the `/search` route registered in Task 8 — this task can be implemented before Task 8, but its navigation test only passes once Task 8's route exists, since `RouterProvider` needs a matching route to render anything at `/search`).
 - Produces: `Hero()` — no props. Rendered inside `EventsPage`, directly below the existing intro block.
 
@@ -785,19 +801,19 @@ import { fireEvent, screen } from '@testing-library/react';
 Then add this test at the end of the `describe('EventsPage', ...)` block (after the `'shows an error message when the request fails'` test):
 
 ```tsx
-  it('renders a hero search box that navigates to /search with the query', async () => {
-    server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
-    server.use(http.get('/api/events', () => HttpResponse.json([])));
+it('renders a hero search box that navigates to /search with the query', async () => {
+  server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
+  server.use(http.get('/api/events', () => HttpResponse.json([])));
 
-    await renderApp('/');
+  await renderApp('/');
 
-    fireEvent.change(await screen.findByLabelText('Search events'), {
-      target: { value: 'kubernetes' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
-
-    expect(await screen.findByRole('heading', { name: 'Search events' })).toBeTruthy();
+  fireEvent.change(await screen.findByLabelText('Search events'), {
+    target: { value: 'kubernetes' },
   });
+  fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+  expect(await screen.findByRole('heading', { name: 'Search events' })).toBeTruthy();
+});
 ```
 
 - [ ] **Step 2: Run the test to confirm it fails**
@@ -884,9 +900,11 @@ git commit -m "feat(100): add a hero search box to the landing page"
 ### Task 8: Register the `/search` route
 
 **Files:**
+
 - Modify: `apps/web/src/router.tsx`
 
 **Interfaces:**
+
 - Consumes: `SearchPage` component (Task 9 creates it — this task can reference it before the file exists only if done together; recommended order is to do Task 9's component creation first, or treat Tasks 8 and 9 as one unit if executed by the same worker). This plan lists them separately for reviewability, but **Task 8's route registration and Task 9's page creation must land in the same commit** — a route pointing at a nonexistent component doesn't compile.
 - Produces: a `/search` route with `validateSearch: z.object({ q: z.string().optional() })`, so `useSearch({ from: '/search' })` anywhere in the app resolves to `{ q?: string }`. This unblocks Task 7's Hero navigation test and Task 9's `SearchPage`.
 
@@ -948,12 +966,14 @@ No standalone commit here; `router.tsx` is committed together with `search.page.
 ### Task 9: `SearchPage` and `api.ts` support
 
 **Files:**
+
 - Modify: `apps/web/src/lib/api.ts`
 - Create: `apps/web/src/events/search.page.tsx`
 - Test: `apps/web/src/events/search.page.spec.tsx`
 - (Carries Task 8's `router.tsx` change into its commit.)
 
 **Interfaces:**
+
 - Consumes: `fetchEvents`/`fetchEventsVip` (extended here with `q`), `EventListItem` (existing), `EventSearchForm` (Task 6), `useSearch`/`useNavigate` from `@tanstack/react-router` against the `/search` route (Task 8), `authClient.useSession()` (existing pattern from `EventsPage`).
 - Produces: the `/search` page — nothing downstream consumes this.
 
