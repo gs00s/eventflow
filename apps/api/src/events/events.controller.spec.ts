@@ -32,6 +32,26 @@ describe('EventsController', () => {
     expect(incSpy).toHaveBeenCalledWith({ tier: 'vip' });
   });
 
+  it('passes the q query param through to the public repository call', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const repoSpy = vi.spyOn(module.get(EventsRepository), 'findPublic').mockResolvedValueOnce([]);
+    const controller = module.get(EventsController);
+
+    await controller.findAll('kubernetes');
+
+    expect(repoSpy).toHaveBeenCalledWith('kubernetes');
+  });
+
+  it('passes the q query param through to the VIP repository call', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const repoSpy = vi.spyOn(module.get(EventsRepository), 'findAll').mockResolvedValueOnce([]);
+    const controller = module.get(EventsController);
+
+    await controller.findAllVip(sessionFor({ isVip: true }), 'kubernetes');
+
+    expect(repoSpy).toHaveBeenCalledWith('kubernetes');
+  });
+
   it('resolves via Nest DI and lists public events', async () => {
     const event = eventFactory.build();
     const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
