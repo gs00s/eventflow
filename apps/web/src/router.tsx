@@ -5,12 +5,14 @@ import {
   redirect,
   type RouterHistory,
 } from '@tanstack/react-router';
+import * as z from 'zod';
 import { authClient } from '@/lib/auth-client';
 import { RootLayout } from '@/components/root-layout';
 import { LoginPage } from '@/auth/login.page';
 import { RegisterPage } from '@/auth/register.page';
 import { EventDetailPage } from '@/events/event-detail.page';
 import { EventsPage } from '@/events/events.page';
+import { SearchPage } from '@/events/search.page';
 import { SpeakerDetailPage } from '@/speakers/speaker-detail.page';
 import { SpeakersPage } from '@/speakers/speakers.page';
 import { ProfilePage } from '@/users/profile.page';
@@ -27,6 +29,15 @@ const eventDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/events/$eventId',
   component: EventDetailPage,
+});
+
+const searchParamsSchema = z.object({ q: z.string().optional() });
+
+const searchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/search',
+  validateSearch: searchParamsSchema,
+  component: SearchPage,
 });
 
 const speakersRoute = createRoute({
@@ -74,6 +85,7 @@ const profileRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   eventDetailRoute,
+  searchRoute,
   speakersRoute,
   speakerDetailRoute,
   loginRoute,
