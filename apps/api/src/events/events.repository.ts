@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, ilike, or } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { events } from '../db/schemas';
 
@@ -7,12 +7,18 @@ import { events } from '../db/schemas';
 export class EventsRepository {
   constructor(private readonly dbService: DbService) {}
 
-  findAll() {
-    return this.dbService.db.select().from(events);
+  findAll(q?: string) {
+    return this.dbService.db
+      .select()
+      .from(events)
+      .where(q ? matchesQuery(q) : undefined);
   }
 
-  findPublic() {
-    return this.dbService.db.select().from(events).where(eq(events.isVip, false));
+  findPublic(q?: string) {
+    return this.dbService.db
+      .select()
+      .from(events)
+      .where(q ? and(eq(events.isVip, false), matchesQuery(q)) : eq(events.isVip, false));
   }
 
   findById(id: string) {
@@ -36,4 +42,8 @@ export class EventsRepository {
 
     return rows[0]?.isVip;
   }
+}
+
+function matchesQuery(q: string) {
+  return or(ilike(events.title, `%${q}%`), ilike(events.description, `%${q}%`));
 }
