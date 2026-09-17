@@ -20,6 +20,15 @@ describe('Events (integration)', () => {
   const layout = layoutFactory.build();
   const event = eventFactory.build({ ownerId: owner.id, layoutId: layout.id });
   const vipEvent = eventFactory.build({ ownerId: owner.id, isVip: true });
+  const searchableEvent = eventFactory.build({
+    ownerId: owner.id,
+    title: 'Kubernetes Deep Dive Workshop',
+  });
+  const searchableVipEvent = eventFactory.build({
+    ownerId: owner.id,
+    isVip: true,
+    description: 'An exclusive session on kubernetes adoption at scale.',
+  });
   const speaker = speakerFactory.build();
   const session = eventSessionFactory.build({ eventId: event.id, speakerId: speaker.id });
 
@@ -33,7 +42,7 @@ describe('Events (integration)', () => {
     await db.insert(user).values(owner);
     await db.insert(speakers).values(speaker);
     await db.insert(layouts).values(layout);
-    await db.insert(events).values([event, vipEvent]);
+    await db.insert(events).values([event, vipEvent, searchableEvent, searchableVipEvent]);
     await db.insert(eventSessions).values(session);
     await db.$client.end();
 
@@ -73,7 +82,40 @@ describe('Events (integration)', () => {
     const response = await request(app.getHttpServer()).get('/api/events');
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual([expect.objectContaining({ title: event.title })]);
+    expect(response.body).toEqual(
+      expect.arrayContaining([expect.objectContaining({ title: event.title })]),
+    );
+    expect(response.body).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: vipEvent.id })]),
+    );
+  });
+
+  it('GET /api/events?q= filters non-VIP events by a title/description match', async () => {
+    const response = await request(app.getHttpServer()).get('/api/events?q=kubernetes');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([expect.objectContaining({ id: searchableEvent.id })]);
+  });
+
+  it('GET /api/events?q= returns an empty array when nothing matches', async () => {
+    const response = await request(app.getHttpServer()).get('/api/events?q=nonexistent-term-xyz');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
+  });
+
+  it('GET /api/events/vip?q= filters every event by a title/description match for a VIP user', async () => {
+    const agent = await vipAgent();
+
+    const response = await agent.get('/api/events/vip?q=kubernetes');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: searchableEvent.id }),
+        expect.objectContaining({ id: searchableVipEvent.id }),
+      ]),
+    );
   });
 
   it('GET /api/events/:id returns the event detail with its sessions, speakers, and layout', async () => {

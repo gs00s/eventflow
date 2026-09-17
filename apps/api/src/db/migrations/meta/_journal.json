@@ -57,6 +57,13 @@
       "when": 1789209133645,
       "tag": "0007_add_owner_id_to_events",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789584204758,
+      "tag": "0008_add_trgm_search_indexes_to_events",
+      "breakpoints": true
     }
   ]
 }

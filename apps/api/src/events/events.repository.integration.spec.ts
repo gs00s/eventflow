@@ -19,6 +19,17 @@ describe('EventsRepository (integration)', () => {
   const layout = layoutFactory.build();
   const event = eventFactory.build({ ownerId: owner.id, layoutId: layout.id });
   const vipEvent = eventFactory.build({ ownerId: owner.id, isVip: true });
+  const searchableEvent = eventFactory.build({
+    ownerId: owner.id,
+    title: 'Kubernetes Deep Dive Workshop',
+    description: 'Hands-on container orchestration for platform teams.',
+  });
+  const searchableVipEvent = eventFactory.build({
+    ownerId: owner.id,
+    isVip: true,
+    title: 'Executive Roundtable',
+    description: 'An exclusive discussion on kubernetes adoption at scale.',
+  });
   const speaker = speakerFactory.build();
   const session = eventSessionFactory.build({ eventId: event.id, speakerId: speaker.id });
 
@@ -34,7 +45,9 @@ describe('EventsRepository (integration)', () => {
     await dbService.db.insert(user).values(owner);
     await dbService.db.insert(speakers).values(speaker);
     await dbService.db.insert(layouts).values(layout);
-    await dbService.db.insert(events).values([event, vipEvent]);
+    await dbService.db
+      .insert(events)
+      .values([event, vipEvent, searchableEvent, searchableVipEvent]);
     await dbService.db.insert(eventSessions).values(session);
   });
 
@@ -51,7 +64,35 @@ describe('EventsRepository (integration)', () => {
   it('excludes VIP events from the public query', async () => {
     const result = await repository.findPublic();
 
-    expect(result.map((row) => row.id)).toEqual([event.id]);
+    expect(result.map((row) => row.id)).toEqual(
+      expect.not.arrayContaining([vipEvent.id, searchableVipEvent.id]),
+    );
+  });
+
+  it('matches a non-VIP event by a case-insensitive title substring, publicly', async () => {
+    const result = await repository.findPublic('KUBERNETES');
+
+    expect(result.map((row) => row.id)).toEqual([searchableEvent.id]);
+  });
+
+  it('matches an event by a substring in its description', async () => {
+    const result = await repository.findAll('kubernetes');
+
+    expect(result.map((row) => row.id)).toEqual(
+      expect.arrayContaining([searchableEvent.id, searchableVipEvent.id]),
+    );
+  });
+
+  it('excludes a VIP-only match from the public search', async () => {
+    const result = await repository.findPublic('roundtable');
+
+    expect(result).toEqual([]);
+  });
+
+  it('returns no rows for a query that matches nothing', async () => {
+    const result = await repository.findPublic('nonexistent-term-xyz');
+
+    expect(result).toEqual([]);
   });
 
   it('returns an event with its sessions, their assigned speakers, and its layout', async () => {

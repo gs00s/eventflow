@@ -46,14 +46,14 @@ export async function fetchSpeakerEventsVip(id: string): Promise<SpeakerEvent[]>
   return speakerEventSchema.array().parse(await res.json());
 }
 
-export async function fetchEvents(): Promise<Event[]> {
-  const res = await fetch('/api/events');
+export async function fetchEvents(q?: string): Promise<Event[]> {
+  const res = await fetch(q ? `/api/events?q=${encodeURIComponent(q)}` : '/api/events');
   if (!res.ok) throw new ApiError(res.status, 'Failed to fetch events');
   return eventSchema.array().parse(await res.json());
 }
 
-export async function fetchEventsVip(): Promise<Event[]> {
-  const res = await fetch('/api/events/vip');
+export async function fetchEventsVip(q?: string): Promise<Event[]> {
+  const res = await fetch(q ? `/api/events/vip?q=${encodeURIComponent(q)}` : '/api/events/vip');
   if (!res.ok) throw new ApiError(res.status, 'Failed to fetch events');
   return eventSchema.array().parse(await res.json());
 }

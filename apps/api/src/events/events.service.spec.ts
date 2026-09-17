@@ -45,6 +45,28 @@ describe('EventsService', () => {
     expect(result.find((event) => event.id === vipRow.id)?.isVip).toBe(true);
   });
 
+  it('passes the search query through to the public repository call', async () => {
+    const row = eventFactory.build();
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const repoSpy = vi.spyOn(module.get(EventsRepository), 'findPublic').mockResolvedValue([row]);
+    const service = module.get(EventsService);
+
+    await service.findPublic('kubernetes');
+
+    expect(repoSpy).toHaveBeenCalledWith('kubernetes');
+  });
+
+  it('passes the search query through to the VIP repository call', async () => {
+    const row = eventFactory.build();
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const repoSpy = vi.spyOn(module.get(EventsRepository), 'findAll').mockResolvedValue([row]);
+    const service = module.get(EventsService);
+
+    await service.findAllForVip('kubernetes');
+
+    expect(repoSpy).toHaveBeenCalledWith('kubernetes');
+  });
+
   it('maps a detail row with its sessions, deduped speakers, and layout to an EventDetail DTO', async () => {
     const row = eventFactory.build();
     const speaker = speakerFactory.build();

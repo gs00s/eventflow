@@ -13,14 +13,14 @@ export class EventsService {
     private readonly registrationsRepository: RegistrationsRepository,
   ) {}
 
-  async findPublic(): Promise<Event[]> {
-    const rows = await this.eventsRepository.findPublic();
+  async findPublic(q?: string): Promise<Event[]> {
+    const rows = await this.eventsRepository.findPublic(q);
 
     return rows.map(toEvent);
   }
 
-  async findAllForVip(): Promise<Event[]> {
-    const rows = await this.eventsRepository.findAll();
+  async findAllForVip(q?: string): Promise<Event[]> {
+    const rows = await this.eventsRepository.findAll(q);
 
     return rows.map(toEvent);
   }

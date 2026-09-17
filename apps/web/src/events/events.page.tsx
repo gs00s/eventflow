@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchEvents, fetchEventsVip } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
 import { EventListItem } from './components/event-list-item';
+import { Hero } from './components/hero';
 
 export function EventsPage() {
   const { data: session, isPending: isSessionPending } = authClient.useSession();
@@ -9,7 +10,7 @@ export function EventsPage() {
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['events', { isVip }],
-    queryFn: isVip ? fetchEventsVip : fetchEvents,
+    queryFn: () => (isVip ? fetchEventsVip() : fetchEvents()),
     enabled: !isSessionPending,
   });
 
@@ -17,6 +18,7 @@ export function EventsPage() {
     <div>
       <h1 className="text-2xl font-semibold">EventFlow</h1>
       <p className="mt-2 text-muted-foreground">Find and register for upcoming events.</p>
+      <Hero />
       {(isSessionPending || isLoading) && <p className="mt-4 text-muted-foreground">Loading…</p>}
       {isError && <p className="mt-4 text-destructive">Failed to load events.</p>}
       {data && (

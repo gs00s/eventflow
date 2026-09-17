@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { server } from '@/test/mocks/server';
@@ -53,5 +53,19 @@ describe('EventsPage', () => {
     const error = await screen.findByText('Failed to load events.');
 
     expect(error).toBeTruthy();
+  });
+
+  it('renders a hero search box that navigates to /search with the query', async () => {
+    server.use(http.get('/api/auth/get-session', () => HttpResponse.json(null)));
+    server.use(http.get('/api/events', () => HttpResponse.json([])));
+
+    await renderApp('/');
+
+    fireEvent.change(await screen.findByLabelText('Search events'), {
+      target: { value: 'kubernetes' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(await screen.findByRole('heading', { name: 'Search events' })).toBeTruthy();
   });
 });
