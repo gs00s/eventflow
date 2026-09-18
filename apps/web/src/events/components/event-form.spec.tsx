@@ -21,8 +21,12 @@ function fillRequiredFields() {
   });
   fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-03-15' } });
   fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Austin' } });
-  fireEvent.change(screen.getByLabelText('Venue'), { target: { value: 'Austin Convention Center' } });
-  fireEvent.change(screen.getByLabelText('Address'), { target: { value: '500 E Cesar Chavez St' } });
+  fireEvent.change(screen.getByLabelText('Venue'), {
+    target: { value: 'Austin Convention Center' },
+  });
+  fireEvent.change(screen.getByLabelText('Address'), {
+    target: { value: '500 E Cesar Chavez St' },
+  });
   fireEvent.change(screen.getByLabelText('Organizer Name'), { target: { value: 'Snapsoft' } });
   fireEvent.change(screen.getByLabelText('Organizer Image URL'), { target: { value: '...' } });
   fireEvent.change(screen.getByLabelText('Hero Image URL'), { target: { value: '...' } });

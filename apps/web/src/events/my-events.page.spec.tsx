@@ -80,7 +80,9 @@ describe('MyEventsPage', () => {
 
     expect(await screen.findByText('Failed to delete the event. Please try again.')).toBeTruthy();
 
-    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancel' }),
+    );
 
     expect(await screen.findByRole('link', { name: event.title })).toBeTruthy();
   });

@@ -319,9 +319,7 @@ describe('Events (integration)', () => {
   });
 
   it('POST /api/events returns 401 when unauthenticated', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/api/events')
-      .send(validEventInput());
+    const response = await request(app.getHttpServer()).post('/api/events').send(validEventInput());
 
     expect(response.status).toBe(401);
   });

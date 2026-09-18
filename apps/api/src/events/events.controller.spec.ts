@@ -371,9 +371,7 @@ describe('EventsController', () => {
     vi.spyOn(module.get(EventsService), 'findOwnerId').mockResolvedValueOnce(undefined);
     const controller = module.get(EventsController);
 
-    await expect(controller.remove('missing-id', sessionFor())).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(controller.remove('missing-id', sessionFor())).rejects.toThrow(NotFoundException);
   });
 
   it("throws ForbiddenException deleting another owner's event", async () => {
@@ -382,8 +380,8 @@ describe('EventsController', () => {
     vi.spyOn(module.get(EventsService), 'findOwnerId').mockResolvedValueOnce('owner-id');
     const controller = module.get(EventsController);
 
-    await expect(
-      controller.remove('event-id', sessionFor({ id: 'someone-else' })),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(controller.remove('event-id', sessionFor({ id: 'someone-else' }))).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 });
