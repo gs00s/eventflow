@@ -3,6 +3,8 @@ import { and, eq, ilike, or } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { events } from '../db/schemas';
 
+type EventRow = typeof events.$inferSelect;
+
 export interface EventFields {
   title: string;
   subtitle: string;
@@ -52,7 +54,7 @@ export class EventsRepository {
     });
   }
 
-  async findRawById(id: string) {
+  async findRawById(id: string): Promise<EventRow | undefined> {
     const rows = await this.dbService.db.select().from(events).where(eq(events.id, id)).limit(1);
 
     return rows[0];
@@ -78,7 +80,7 @@ export class EventsRepository {
     return rows[0]?.ownerId;
   }
 
-  async create(ownerId: string, values: EventFields) {
+  async create(ownerId: string, values: EventFields): Promise<EventRow> {
     const [row] = await this.dbService.db
       .insert(events)
       .values({ ownerId, ...values })
@@ -87,7 +89,7 @@ export class EventsRepository {
     return row;
   }
 
-  async update(id: string, ownerId: string, values: EventFields) {
+  async update(id: string, ownerId: string, values: EventFields): Promise<EventRow | undefined> {
     const [row] = await this.dbService.db
       .update(events)
       .set(values)

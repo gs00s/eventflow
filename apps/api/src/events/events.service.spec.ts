@@ -1,6 +1,12 @@
 import { Test } from '@nestjs/testing';
 import { describe, expect, it, vi } from 'vitest';
-import { eventFactory, eventSessionFactory, layoutFactory, speakerFactory } from '../test/fixtures';
+import {
+  eventFactory,
+  eventInputFactory,
+  eventSessionFactory,
+  layoutFactory,
+  speakerFactory,
+} from '../test/fixtures';
 import { EventsModule } from './events.module';
 import { EventsRepository } from './events.repository';
 import { EventsService } from './events.service';
@@ -228,5 +234,125 @@ describe('EventsService', () => {
     const result = await service.unregister('viewer-id', 'event-id');
 
     expect(result).toBe(false);
+  });
+
+  it('lists events owned by the given owner, mapped to OwnedEvent', async () => {
+    const row = eventFactory.build();
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findByOwner').mockResolvedValueOnce([row]);
+    const service = module.get(EventsService);
+
+    const result = await service.findMine(row.ownerId);
+
+    expect(result).toEqual([
+      {
+        id: row.id,
+        title: row.title,
+        subtitle: row.subtitle,
+        date: row.date,
+        location: {
+          city: row.locationCity,
+          venue: row.locationVenue,
+          address: row.locationAddress,
+        },
+        hero: { image: row.heroImage, cta: row.heroCta },
+        isVip: row.isVip,
+        description: row.description,
+        organizer: { name: row.organizerName, image: row.organizerImage },
+      },
+    ]);
+  });
+
+  it('resolves findMineById to the mapped event and its owner id', async () => {
+    const row = eventFactory.build();
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findRawById').mockResolvedValueOnce(row);
+    const service = module.get(EventsService);
+
+    const result = await service.findMineById(row.id);
+
+    expect(result).toEqual({
+      event: expect.objectContaining({ id: row.id, title: row.title }),
+      ownerId: row.ownerId,
+    });
+  });
+
+  it('returns undefined from findMineById for an unknown event id', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findRawById').mockResolvedValueOnce(undefined);
+    const service = module.get(EventsService);
+
+    const result = await service.findMineById('missing-id');
+
+    expect(result).toBeUndefined();
+  });
+
+  it('reports the owner id for an event', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'findOwnerId').mockResolvedValueOnce('owner-id');
+    const service = module.get(EventsService);
+
+    const result = await service.findOwnerId('event-id');
+
+    expect(result).toBe('owner-id');
+  });
+
+  it('creates an event, passing the VIP flag through for an allowed owner', async () => {
+    const row = eventFactory.build({ isVip: true });
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const createSpy = vi.spyOn(module.get(EventsRepository), 'create').mockResolvedValueOnce(row);
+    const service = module.get(EventsService);
+    const input = eventInputFactory.build({ isVip: true });
+
+    const result = await service.create('owner-id', input, true);
+
+    expect(createSpy).toHaveBeenCalledWith('owner-id', expect.objectContaining({ isVip: true }));
+    expect(result.isVip).toBe(true);
+  });
+
+  it('forces isVip false creating an event for a non-VIP owner', async () => {
+    const row = eventFactory.build({ isVip: false });
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const createSpy = vi.spyOn(module.get(EventsRepository), 'create').mockResolvedValueOnce(row);
+    const service = module.get(EventsService);
+    const input = eventInputFactory.build({ isVip: true });
+
+    await service.create('owner-id', input, false);
+
+    expect(createSpy).toHaveBeenCalledWith('owner-id', expect.objectContaining({ isVip: false }));
+  });
+
+  it('updates an owned event and maps the result', async () => {
+    const row = eventFactory.build({ title: 'Updated Title' });
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const updateSpy = vi.spyOn(module.get(EventsRepository), 'update').mockResolvedValueOnce(row);
+    const service = module.get(EventsService);
+    const input = eventInputFactory.build();
+
+    const result = await service.update(row.id, 'owner-id', input, true);
+
+    expect(updateSpy).toHaveBeenCalledWith(row.id, 'owner-id', expect.objectContaining({}));
+    expect(result?.title).toBe('Updated Title');
+  });
+
+  it('returns undefined updating an unknown or unowned event id', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsRepository), 'update').mockResolvedValueOnce(undefined);
+    const service = module.get(EventsService);
+
+    const result = await service.update('missing-id', 'owner-id', eventInputFactory.build(), true);
+
+    expect(result).toBeUndefined();
+  });
+
+  it('deletes an owned event via the repository', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const deleteSpy = vi.spyOn(module.get(EventsRepository), 'delete').mockResolvedValueOnce(true);
+    const service = module.get(EventsService);
+
+    const result = await service.delete('event-id', 'owner-id');
+
+    expect(deleteSpy).toHaveBeenCalledWith('event-id', 'owner-id');
+    expect(result).toBe(true);
   });
 });
