@@ -19,80 +19,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
-  # These jobs don't gate the release — they warm caches on main so pr.yml's
-  # restore-keys and deploy.yml's docker cache-from have something to fall
-  # back to. Both only ever have access to the current ref, its base ref (PRs
-  # only), or the default branch's cache — a release tag ref has none of
-  # those unless main already seeded one.
-  typecheck:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-pnpm
-      - uses: actions/cache@v4
-        with:
-          path: .turbo/cache
-          key: turbo-typecheck-${{ github.sha }}
-          restore-keys: turbo-typecheck-
-      - run: pnpm typecheck
-
-  lint:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-pnpm
-      - uses: actions/cache@v4
-        with:
-          path: .turbo/cache
-          key: turbo-lint-${{ github.sha }}
-          restore-keys: turbo-lint-
-      - run: pnpm lint
-
-  test-unit:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-pnpm
-      - uses: actions/cache@v4
-        with:
-          path: .turbo/cache
-          key: turbo-test-unit-${{ github.sha }}
-          restore-keys: turbo-test-unit-
-      - run: pnpm test:unit -- --coverage
-
-  test-integration:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-pnpm
-      - uses: actions/cache@v4
-        with:
-          path: .turbo/cache
-          key: turbo-test-integration-${{ github.sha }}
-          restore-keys: turbo-test-integration-
-      - run: pnpm test:integration -- --coverage
-
+  # Warms main's cache so PR/release-tag runs have a fallback (GH caches don't cross sibling refs).
   build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-pnpm
-      - uses: actions/cache@v4
-        with:
-          path: .turbo/cache
-          key: turbo-build-${{ github.sha }}
-          restore-keys: turbo-build-
-      - run: pnpm build
+    uses: ./.github/workflows/reusable-build.yml
 
   docker-cache-api:
     runs-on: ubuntu-latest
