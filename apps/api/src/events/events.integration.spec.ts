@@ -16,6 +16,8 @@ import {
 
 describe('Events (integration)', () => {
   let app: NestExpressApplication;
+  let actorAgent: ReturnType<typeof request.agent>;
+  const actorEmail = `actor-${Date.now()}@example.com`;
   const owner = userFactory.build();
   const layout = layoutFactory.build();
   const event = eventFactory.build({ ownerId: owner.id, layoutId: layout.id });
@@ -47,6 +49,16 @@ describe('Events (integration)', () => {
     await db.$client.end();
 
     app = await createTestApp();
+
+    // Shared across the my-events tests below (rather than one sign-up per test) to stay
+    // under better-auth's sign-up rate limit (10 per 10s), which this file's existing
+    // registrant/VIP agents already use in full within a single fast test run.
+    actorAgent = request.agent(app.getHttpServer());
+    await actorAgent.post('/api/auth/sign-up/email').send({
+      email: actorEmail,
+      password: 'password1234',
+      name: 'Actor',
+    });
   });
 
   afterAll(async () => {
@@ -76,6 +88,24 @@ describe('Events (integration)', () => {
     });
 
     return agent;
+  }
+
+  function validEventInput(overrides: Partial<Record<string, unknown>> = {}) {
+    return {
+      title: 'Kubernetes Deep Dive Workshop',
+      subtitle: 'Hands-on container orchestration',
+      description: 'Hands-on container orchestration for platform teams.',
+      date: '2026-03-15',
+      location: {
+        city: 'Austin',
+        venue: 'Austin Convention Center',
+        address: '500 E Cesar Chavez St',
+      },
+      organizer: { name: 'Snapsoft', image: '...' },
+      hero: { image: '...', cta: 'Register Now' },
+      isVip: false,
+      ...overrides,
+    };
   }
 
   it('GET /api/events returns only non-VIP events', async () => {
@@ -212,9 +242,9 @@ describe('Events (integration)', () => {
   });
 
   it('POST /api/events/:id/register returns 404 for an unknown event', async () => {
-    const agent = await registrantAgent();
-
-    const response = await agent.post('/api/events/00000000-0000-0000-0000-000000000000/register');
+    const response = await actorAgent.post(
+      '/api/events/00000000-0000-0000-0000-000000000000/register',
+    );
 
     expect(response.status).toBe(404);
   });
@@ -268,5 +298,131 @@ describe('Events (integration)', () => {
 
     expect(deleteResponse.status).toBe(200);
     expect(statusResponse.body).toEqual({ isRegistered: false });
+  });
+
+  it('GET /api/events/mine returns 401 when unauthenticated', async () => {
+    const response = await request(app.getHttpServer()).get('/api/events/mine');
+
+    expect(response.status).toBe(401);
+  });
+
+  it('GET /api/events/mine/:id returns 404 for an unknown event', async () => {
+    const response = await actorAgent.get('/api/events/mine/00000000-0000-0000-0000-000000000000');
+
+    expect(response.status).toBe(404);
+  });
+
+  it('GET /api/events/mine/:id returns 403 for an event owned by someone else', async () => {
+    const response = await actorAgent.get(`/api/events/mine/${event.id}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  it('POST /api/events returns 401 when unauthenticated', async () => {
+    const response = await request(app.getHttpServer()).post('/api/events').send(validEventInput());
+
+    expect(response.status).toBe(401);
+  });
+
+  it('POST /api/events returns 400 for an invalid body', async () => {
+    const response = await actorAgent.post('/api/events').send(validEventInput({ title: '' }));
+
+    expect(response.status).toBe(400);
+  });
+
+  it('POST /api/events forces isVip false for a non-VIP owner even if isVip:true is submitted', async () => {
+    const response = await actorAgent.post('/api/events').send(validEventInput({ isVip: true }));
+
+    expect(response.status).toBe(201);
+    expect(response.body.isVip).toBe(false);
+  });
+
+  it('GET /api/events/mine returns only events owned by the caller, VIP included', async () => {
+    const created = await actorAgent.post('/api/events').send(validEventInput());
+    const db = drizzle(env.DATABASE_URL);
+    await db.update(events).set({ isVip: true }).where(eq(events.id, created.body.id));
+    await db.$client.end();
+
+    const response = await actorAgent.get('/api/events/mine');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: created.body.id, isVip: true })]),
+    );
+  });
+
+  it('GET /api/events/mine/:id returns the event detail for its owner', async () => {
+    const created = await actorAgent.post('/api/events').send(validEventInput());
+
+    const response = await actorAgent.get(`/api/events/mine/${created.body.id}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ id: created.body.id, title: validEventInput().title });
+  });
+
+  it('PATCH /api/events/:id returns 401 when unauthenticated', async () => {
+    const response = await request(app.getHttpServer())
+      .patch(`/api/events/${event.id}`)
+      .send(validEventInput());
+
+    expect(response.status).toBe(401);
+  });
+
+  it('PATCH /api/events/:id returns 403 for an event owned by someone else', async () => {
+    const response = await actorAgent.patch(`/api/events/${event.id}`).send(validEventInput());
+
+    expect(response.status).toBe(403);
+  });
+
+  it('PATCH /api/events/:id returns 404 for an unknown event', async () => {
+    const response = await actorAgent
+      .patch('/api/events/00000000-0000-0000-0000-000000000000')
+      .send(validEventInput());
+
+    expect(response.status).toBe(404);
+  });
+
+  it('PATCH /api/events/:id updates the event for its owner', async () => {
+    const created = await actorAgent.post('/api/events').send(validEventInput());
+
+    const response = await actorAgent
+      .patch(`/api/events/${created.body.id}`)
+      .send(validEventInput({ title: 'Updated Title' }));
+
+    expect(response.status).toBe(200);
+    expect(response.body.title).toBe('Updated Title');
+  });
+
+  it('DELETE /api/events/:id returns 401 when unauthenticated', async () => {
+    const response = await request(app.getHttpServer()).delete(`/api/events/${event.id}`);
+
+    expect(response.status).toBe(401);
+  });
+
+  it('DELETE /api/events/:id returns 403 for an event owned by someone else', async () => {
+    const response = await actorAgent.delete(`/api/events/${event.id}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  it('DELETE /api/events/:id deletes the event for its owner', async () => {
+    const created = await actorAgent.post('/api/events').send(validEventInput());
+
+    const deleteResponse = await actorAgent.delete(`/api/events/${created.body.id}`);
+    const getResponse = await actorAgent.get(`/api/events/mine/${created.body.id}`);
+
+    expect(deleteResponse.status).toBe(200);
+    expect(getResponse.status).toBe(404);
+  });
+
+  it('POST /api/events honors isVip:true for a VIP owner', async () => {
+    const db = drizzle(env.DATABASE_URL);
+    await db.update(user).set({ isVip: true }).where(eq(user.email, actorEmail));
+    await db.$client.end();
+
+    const response = await actorAgent.post('/api/events').send(validEventInput({ isVip: true }));
+
+    expect(response.status).toBe(201);
+    expect(response.body.isVip).toBe(true);
   });
 });

@@ -2,12 +2,15 @@ import {
   currentUserSchema,
   eventDetailSchema,
   eventSchema,
+  ownedEventSchema,
   registrationStatusSchema,
   speakerEventSchema,
   speakerSchema,
   type CurrentUser,
   type Event,
   type EventDetail,
+  type EventInput,
+  type OwnedEvent,
   type RegistrationStatus,
   type Speaker,
   type SpeakerEvent,
@@ -90,4 +93,41 @@ export async function fetchCurrentUser(): Promise<CurrentUser> {
   const res = await fetch('/api/users/me');
   if (!res.ok) throw new ApiError(res.status, 'Failed to fetch current user');
   return currentUserSchema.parse(await res.json());
+}
+
+export async function fetchMyEvents(): Promise<OwnedEvent[]> {
+  const res = await fetch('/api/events/mine');
+  if (!res.ok) throw new ApiError(res.status, 'Failed to fetch your events');
+  return ownedEventSchema.array().parse(await res.json());
+}
+
+export async function fetchMyEvent(id: string): Promise<OwnedEvent> {
+  const res = await fetch(`/api/events/mine/${id}`);
+  if (!res.ok) throw new ApiError(res.status, 'Failed to fetch event');
+  return ownedEventSchema.parse(await res.json());
+}
+
+export async function createEvent(input: EventInput): Promise<OwnedEvent> {
+  const res = await fetch('/api/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to create event');
+  return ownedEventSchema.parse(await res.json());
+}
+
+export async function updateEvent(id: string, input: EventInput): Promise<OwnedEvent> {
+  const res = await fetch(`/api/events/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to update event');
+  return ownedEventSchema.parse(await res.json());
+}
+
+export async function deleteEvent(id: string): Promise<void> {
+  const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new ApiError(res.status, 'Failed to delete event');
 }

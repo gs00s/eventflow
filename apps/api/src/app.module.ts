@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { LoggerModule } from 'nestjs-pino';
+import { ZodValidationPipe } from 'nestjs-zod';
 import { auth } from './auth/auth';
 import { EventsModule } from './events/events.module';
 import { AllExceptionsFilter } from './logging/all-exceptions.filter';
@@ -17,6 +18,9 @@ import { UsersModule } from './users/users.module';
     SpeakersModule,
     UsersModule,
   ],
-  providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
+  providers: [
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_PIPE, useClass: ZodValidationPipe },
+  ],
 })
 export class AppModule {}
