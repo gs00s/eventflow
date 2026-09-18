@@ -1,0 +1,13 @@
+name: Setup pnpm
+description: Resolve the pinned Node version and install pnpm with dependency caching. Run actions/checkout before this.
+
+runs:
+  using: composite
+  steps:
+    - id: node-version
+      shell: bash
+      run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
+    - uses: pnpm/setup@v2
+      with:
+        runtime: node@${{ steps.node-version.outputs.version }}
+        cache: true

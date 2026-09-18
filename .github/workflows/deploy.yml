@@ -62,12 +62,7 @@ jobs:
           AUTH_SECRET=$(gcloud secrets versions access latest --secret=eventflow-api-better-auth-secret --project="${GCP_PROJECT_ID}")
           echo "::add-mask::$AUTH_SECRET"
           echo "BETTER_AUTH_SECRET=$AUTH_SECRET" >> "$GITHUB_ENV"
-      - id: node-version
-        run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
-      - uses: pnpm/setup@v2
-        with:
-          runtime: node@${{ steps.node-version.outputs.version }}
-          cache: true
+      - uses: ./.github/actions/setup-pnpm
       - run: pnpm --filter=@eventflow/api... build
       - run: pnpm --filter=@eventflow/api... db:migrate
       - run: pnpm --filter=@eventflow/api... db:seed
@@ -103,11 +98,15 @@ jobs:
           file: apps/api/Dockerfile
           push: true
           tags: ${{ steps.images.outputs.api }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
       - uses: docker/build-push-action@v6
         with:
           context: docker/datadog
           push: true
           tags: ${{ steps.images.outputs.datadog-agent }}
+          cache-from: type=gha,scope=datadog-agent
+          cache-to: type=gha,mode=max,scope=datadog-agent
       # One call for both containers: two separate `update` calls would race and clobber each other.
       - run: |
           gcloud run services update api \
@@ -132,12 +131,7 @@ jobs:
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-      - id: node-version
-        run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
-      - uses: pnpm/setup@v2
-        with:
-          runtime: node@${{ steps.node-version.outputs.version }}
-          cache: true
+      - uses: ./.github/actions/setup-pnpm
       - run: pnpm --filter=@eventflow/web... build
       # Pinned in package.json: firebase-tools' WIF/ADC auth has open upstream bugs on newer releases (firebase/firebase-tools#10716, #10726) — bump once confirmed fixed.
       - run: pnpm exec firebase deploy --only hosting --non-interactive --project="${GCP_PROJECT_ID}"

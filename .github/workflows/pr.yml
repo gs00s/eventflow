@@ -4,22 +4,79 @@ on:
   pull_request:
 
 jobs:
-  checks:
+  audit:
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - id: node-version
-        run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
-      - uses: pnpm/setup@v2
-        with:
-          runtime: node@${{ steps.node-version.outputs.version }}
-          cache: true
+      - uses: ./.github/actions/setup-pnpm
       - run: pnpm audit --audit-level=high
+
+  typecheck:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-pnpm
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-typecheck-${{ github.sha }}
+          restore-keys: turbo-typecheck-
       - run: pnpm typecheck
+
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-pnpm
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-lint-${{ github.sha }}
+          restore-keys: turbo-lint-
       - run: pnpm lint
+
+  fmt:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-pnpm
       - run: pnpm fmt:check
+
+  test-unit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-pnpm
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-test-unit-${{ github.sha }}
+          restore-keys: turbo-test-unit-
       - run: pnpm test:unit -- --coverage
+
+  test-integration:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-pnpm
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-test-integration-${{ github.sha }}
+          restore-keys: turbo-test-integration-
       - run: pnpm test:integration -- --coverage
-      - run: pnpm build
+
+  build:
+    uses: ./.github/workflows/reusable-build.yml

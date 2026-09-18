@@ -1,0 +1,19 @@
+name: Build (reusable)
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-pnpm
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-build-${{ github.sha }}
+          restore-keys: turbo-build-
+      - run: pnpm build
