@@ -1,11 +1,12 @@
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { describe, expect, it, vi } from 'vitest';
-import { eventFactory, sessionFor } from '../test/fixtures';
+import { eventFactory, eventInputFactory, sessionFor } from '../test/fixtures';
 import { eventsRequestsCounter } from '../metrics/events-requests.counter';
 import { EventsController } from './events.controller';
 import { EventsModule } from './events.module';
 import { EventsRepository } from './events.repository';
+import { EventsService } from './events.service';
 import { RegistrationsRepository } from './registrations.repository';
 
 describe('EventsController', () => {
@@ -250,5 +251,139 @@ describe('EventsController', () => {
     const controller = module.get(EventsController);
 
     await expect(controller.unregister('event-id', sessionFor())).resolves.toBeUndefined();
+  });
+
+  it("lists the caller's own events on GET mine", async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsService), 'findMine').mockResolvedValueOnce([]);
+    const controller = module.get(EventsController);
+    const session = sessionFor({ id: 'owner-id' });
+
+    const result = await controller.findMine(session);
+
+    expect(result).toEqual([]);
+  });
+
+  it('returns an owned event on GET mine/:id for its owner', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const session = sessionFor({ id: 'owner-id' });
+    vi.spyOn(module.get(EventsService), 'findMineById').mockResolvedValueOnce({
+      event: { id: 'event-id' } as never,
+      ownerId: 'owner-id',
+    });
+    const controller = module.get(EventsController);
+
+    const result = await controller.findMineById('event-id', session);
+
+    expect(result).toEqual({ id: 'event-id' });
+  });
+
+  it('throws NotFoundException on GET mine/:id for an unknown event', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsService), 'findMineById').mockResolvedValueOnce(undefined);
+    const controller = module.get(EventsController);
+
+    await expect(controller.findMineById('missing-id', sessionFor())).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('throws ForbiddenException on GET mine/:id for a non-owner', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsService), 'findMineById').mockResolvedValueOnce({
+      event: { id: 'event-id' } as never,
+      ownerId: 'owner-id',
+    });
+    const controller = module.get(EventsController);
+
+    await expect(
+      controller.findMineById('event-id', sessionFor({ id: 'someone-else' })),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('creates an event for the session owner via POST', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const createSpy = vi
+      .spyOn(module.get(EventsService), 'create')
+      .mockResolvedValueOnce(eventFactory.build() as never);
+    const controller = module.get(EventsController);
+    const session = sessionFor({ id: 'owner-id', isVip: true });
+    const input = eventInputFactory.build();
+
+    await controller.create(input as never, session);
+
+    expect(createSpy).toHaveBeenCalledWith('owner-id', input, true);
+  });
+
+  it('updates an owned event via PATCH', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const updateSpy = vi
+      .spyOn(module.get(EventsService), 'update')
+      .mockResolvedValueOnce(eventFactory.build() as never);
+    const controller = module.get(EventsController);
+    const session = sessionFor({ id: 'owner-id', isVip: false });
+    const input = eventInputFactory.build();
+
+    await controller.update('event-id', input as never, session);
+
+    expect(updateSpy).toHaveBeenCalledWith('event-id', 'owner-id', input, false);
+  });
+
+  it('throws NotFoundException patching an unknown event', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsService), 'update').mockResolvedValueOnce(undefined);
+    vi.spyOn(module.get(EventsService), 'findOwnerId').mockResolvedValueOnce(undefined);
+    const controller = module.get(EventsController);
+
+    await expect(
+      controller.update('missing-id', eventInputFactory.build() as never, sessionFor()),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it("throws ForbiddenException patching another owner's event", async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsService), 'update').mockResolvedValueOnce(undefined);
+    vi.spyOn(module.get(EventsService), 'findOwnerId').mockResolvedValueOnce('owner-id');
+    const controller = module.get(EventsController);
+
+    await expect(
+      controller.update(
+        'event-id',
+        eventInputFactory.build() as never,
+        sessionFor({ id: 'someone-else' }),
+      ),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('deletes an owned event via DELETE', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    const deleteSpy = vi.spyOn(module.get(EventsService), 'delete').mockResolvedValueOnce(true);
+    const controller = module.get(EventsController);
+
+    await controller.remove('event-id', sessionFor({ id: 'owner-id' }));
+
+    expect(deleteSpy).toHaveBeenCalledWith('event-id', 'owner-id');
+  });
+
+  it('throws NotFoundException deleting an unknown event', async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsService), 'delete').mockResolvedValueOnce(false);
+    vi.spyOn(module.get(EventsService), 'findOwnerId').mockResolvedValueOnce(undefined);
+    const controller = module.get(EventsController);
+
+    await expect(controller.remove('missing-id', sessionFor())).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it("throws ForbiddenException deleting another owner's event", async () => {
+    const module = await Test.createTestingModule({ imports: [EventsModule] }).compile();
+    vi.spyOn(module.get(EventsService), 'delete').mockResolvedValueOnce(false);
+    vi.spyOn(module.get(EventsService), 'findOwnerId').mockResolvedValueOnce('owner-id');
+    const controller = module.get(EventsController);
+
+    await expect(
+      controller.remove('event-id', sessionFor({ id: 'someone-else' })),
+    ).rejects.toThrow(ForbiddenException);
   });
 });
