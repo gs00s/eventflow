@@ -2,18 +2,10 @@ import { fireEvent, screen, within } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 import { server } from '@/test/mocks/server';
-import { eventFactory, sessionFor, userFactory } from '@/test/fixtures';
+import { ownedEventFactory, sessionFor, userFactory } from '@/test/fixtures';
 import { setupRouterTest } from '@/test/router-harness';
 
 const renderApp = setupRouterTest();
-
-function ownedEvent(overrides: Partial<ReturnType<typeof eventFactory.build>> = {}) {
-  return {
-    ...eventFactory.build(overrides),
-    description: 'A hands-on workshop for platform teams.',
-    organizer: { name: 'Snapsoft', image: '...' },
-  };
-}
 
 function confirmDeleteButton() {
   return within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete' });
@@ -40,7 +32,7 @@ describe('MyEventsPage', () => {
   });
 
   it("lists the caller's own events with an Edit link", async () => {
-    const event = ownedEvent({ title: 'Kubernetes Deep Dive' });
+    const event = ownedEventFactory.build({ title: 'Kubernetes Deep Dive' });
     server.use(
       http.get('/api/auth/get-session', () => HttpResponse.json(sessionFor(userFactory.build()))),
       http.get('/api/events/mine', () => HttpResponse.json([event])),
@@ -54,7 +46,7 @@ describe('MyEventsPage', () => {
   });
 
   it('removes an event from the list after a confirmed delete', async () => {
-    const event = ownedEvent({ title: 'Kubernetes Deep Dive' });
+    const event = ownedEventFactory.build({ title: 'Kubernetes Deep Dive' });
     server.use(
       http.get('/api/auth/get-session', () => HttpResponse.json(sessionFor(userFactory.build()))),
       http.get('/api/events/mine', () => HttpResponse.json([event])),
@@ -73,7 +65,7 @@ describe('MyEventsPage', () => {
   });
 
   it('shows an error and keeps the event when delete fails', async () => {
-    const event = ownedEvent({ title: 'Kubernetes Deep Dive' });
+    const event = ownedEventFactory.build({ title: 'Kubernetes Deep Dive' });
     server.use(
       http.get('/api/auth/get-session', () => HttpResponse.json(sessionFor(userFactory.build()))),
       http.get('/api/events/mine', () => HttpResponse.json([event])),

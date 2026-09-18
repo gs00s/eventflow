@@ -11,6 +11,7 @@ import { RootLayout } from '@/components/root-layout';
 import { LoginPage } from '@/auth/login.page';
 import { RegisterPage } from '@/auth/register.page';
 import { EventDetailPage } from '@/events/event-detail.page';
+import { EventNewPage } from '@/events/event-new.page';
 import { EventsPage } from '@/events/events.page';
 import { MyEventsPage } from '@/events/my-events.page';
 import { SearchPage } from '@/events/search.page';
@@ -40,6 +41,16 @@ const myEventsRoute = createRoute({
     if (!data?.user) throw redirect({ to: '/login' });
   },
   component: MyEventsPage,
+});
+
+const eventNewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/events/new',
+  beforeLoad: async () => {
+    const { data } = await authClient.getSession();
+    if (!data?.user) throw redirect({ to: '/login' });
+  },
+  component: EventNewPage,
 });
 
 const searchParamsSchema = z.object({ q: z.string().optional() });
@@ -97,6 +108,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   eventDetailRoute,
   myEventsRoute,
+  eventNewRoute,
   searchRoute,
   speakersRoute,
   speakerDetailRoute,
