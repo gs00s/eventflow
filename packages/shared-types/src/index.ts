@@ -42,6 +42,39 @@ export const eventSchema = z.object({
 
 export type Event = z.infer<typeof eventSchema>;
 
+export const ownedEventSchema = eventSchema.extend({
+  description: z.string(),
+  organizer: z.object({
+    name: z.string(),
+    image: z.string(),
+  }),
+});
+
+export type OwnedEvent = z.infer<typeof ownedEventSchema>;
+
+export const eventInputSchema = z.object({
+  title: z.string().min(1, 'Title is required.'),
+  subtitle: z.string().min(1, 'Subtitle is required.'),
+  description: z.string().min(1, 'Description is required.'),
+  date: z.iso.date('Enter a valid date.'),
+  location: z.object({
+    city: z.string().min(1, 'City is required.'),
+    venue: z.string().min(1, 'Venue is required.'),
+    address: z.string().min(1, 'Address is required.'),
+  }),
+  organizer: z.object({
+    name: z.string().min(1, 'Organizer name is required.'),
+    image: z.string().min(1, 'Organizer image is required.'),
+  }),
+  hero: z.object({
+    image: z.string().min(1, 'Hero image is required.'),
+    cta: z.string().min(1, 'Hero CTA is required.'),
+  }),
+  isVip: z.boolean(),
+});
+
+export type EventInput = z.infer<typeof eventInputSchema>;
+
 export const eventSessionSchema = z.object({
   id: z.string(),
   title: z.string(),
