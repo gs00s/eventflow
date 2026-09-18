@@ -12,6 +12,7 @@ import { LoginPage } from '@/auth/login.page';
 import { RegisterPage } from '@/auth/register.page';
 import { EventDetailPage } from '@/events/event-detail.page';
 import { EventsPage } from '@/events/events.page';
+import { MyEventsPage } from '@/events/my-events.page';
 import { SearchPage } from '@/events/search.page';
 import { SpeakerDetailPage } from '@/speakers/speaker-detail.page';
 import { SpeakersPage } from '@/speakers/speakers.page';
@@ -29,6 +30,16 @@ const eventDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/events/$eventId',
   component: EventDetailPage,
+});
+
+const myEventsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/my-events',
+  beforeLoad: async () => {
+    const { data } = await authClient.getSession();
+    if (!data?.user) throw redirect({ to: '/login' });
+  },
+  component: MyEventsPage,
 });
 
 const searchParamsSchema = z.object({ q: z.string().optional() });
@@ -85,6 +96,7 @@ const profileRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   eventDetailRoute,
+  myEventsRoute,
   searchRoute,
   speakersRoute,
   speakerDetailRoute,
