@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { layoutSchema, type Event, type EventDetail } from '@eventflow/shared-types';
+import {
+  layoutSchema,
+  type Event,
+  type EventDetail,
+  type EventInput,
+  type OwnedEvent,
+} from '@eventflow/shared-types';
 import type { events } from '../db/schemas';
 import { EventsRepository } from './events.repository';
 import { RegistrationsRepository } from './registrations.repository';
@@ -71,6 +77,44 @@ export class EventsService {
     return this.eventsRepository.findVipFlag(id);
   }
 
+  async findMine(ownerId: string): Promise<OwnedEvent[]> {
+    const rows = await this.eventsRepository.findByOwner(ownerId);
+
+    return rows.map(toOwnedEvent);
+  }
+
+  async findMineById(id: string): Promise<{ event: OwnedEvent; ownerId: string } | undefined> {
+    const row = await this.eventsRepository.findRawById(id);
+    if (!row) return undefined;
+
+    return { event: toOwnedEvent(row), ownerId: row.ownerId };
+  }
+
+  findOwnerId(id: string): Promise<string | undefined> {
+    return this.eventsRepository.findOwnerId(id);
+  }
+
+  async create(ownerId: string, input: EventInput, isVipAllowed: boolean): Promise<OwnedEvent> {
+    const row = await this.eventsRepository.create(ownerId, toEventFields(input, isVipAllowed));
+
+    return toOwnedEvent(row);
+  }
+
+  async update(
+    id: string,
+    ownerId: string,
+    input: EventInput,
+    isVipAllowed: boolean,
+  ): Promise<OwnedEvent | undefined> {
+    const row = await this.eventsRepository.update(id, ownerId, toEventFields(input, isVipAllowed));
+
+    return row ? toOwnedEvent(row) : undefined;
+  }
+
+  delete(id: string, ownerId: string): Promise<boolean> {
+    return this.eventsRepository.delete(id, ownerId);
+  }
+
   isRegistered(eventId: string, userId: string): Promise<boolean> {
     return this.registrationsRepository.existsForUser(userId, eventId);
   }
@@ -100,5 +144,30 @@ function toEvent(row: EventRow): Event {
       cta: row.heroCta,
     },
     isVip: row.isVip,
+  };
+}
+
+function toEventFields(input: EventInput, isVipAllowed: boolean) {
+  return {
+    title: input.title,
+    subtitle: input.subtitle,
+    description: input.description,
+    date: input.date,
+    locationCity: input.location.city,
+    locationVenue: input.location.venue,
+    locationAddress: input.location.address,
+    organizerName: input.organizer.name,
+    organizerImage: input.organizer.image,
+    heroImage: input.hero.image,
+    heroCta: input.hero.cta,
+    isVip: isVipAllowed ? input.isVip : false,
+  };
+}
+
+function toOwnedEvent(row: EventRow): OwnedEvent {
+  return {
+    ...toEvent(row),
+    description: row.description,
+    organizer: { name: row.organizerName, image: row.organizerImage },
   };
 }

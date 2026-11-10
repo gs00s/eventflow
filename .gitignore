@@ -18,6 +18,9 @@ coverage/
 .vscode/
 .claude/
 
+# superpowers plan scratch files
+docs/superpowers/
+
 # logs
 *.log
 

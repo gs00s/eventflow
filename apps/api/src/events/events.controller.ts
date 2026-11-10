@@ -1,4 +1,5 @@
 import {
+  Body,
   ConflictException,
   Controller,
   Delete,
@@ -6,13 +7,21 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
-import type { Event, EventDetail, RegistrationStatus } from '@eventflow/shared-types';
+import type {
+  Event,
+  EventDetail,
+  EventInput,
+  OwnedEvent,
+  RegistrationStatus,
+} from '@eventflow/shared-types';
 import { AllowAnonymous, Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type { auth } from '../auth/auth';
 import { eventsRequestsCounter } from '../metrics/events-requests.counter';
+import { EventInputDto } from './dto/event-input.dto';
 import { EventsService } from './events.service';
 
 @Controller('events')
@@ -51,6 +60,24 @@ export class EventsController {
     if (!event.isVip) throw new ForbiddenException();
 
     return event;
+  }
+
+  // Must be registered before ':id', or Nest matches "mine" as an :id value.
+  @Get('mine')
+  findMine(@Session() session: UserSession<typeof auth>): Promise<OwnedEvent[]> {
+    return this.eventsService.findMine(session.user.id);
+  }
+
+  @Get('mine/:id')
+  async findMineById(
+    @Param('id') id: string,
+    @Session() session: UserSession<typeof auth>,
+  ): Promise<OwnedEvent> {
+    const result = await this.eventsService.findMineById(id);
+    if (!result) throw new NotFoundException();
+    if (result.ownerId !== session.user.id) throw new ForbiddenException();
+
+    return result.event;
   }
 
   @AllowAnonymous()
@@ -93,5 +120,45 @@ export class EventsController {
   ): Promise<void> {
     const deleted = await this.eventsService.unregister(session.user.id, id);
     if (!deleted) throw new NotFoundException();
+  }
+
+  @Post()
+  create(
+    @Body() body: EventInputDto,
+    @Session() session: UserSession<typeof auth>,
+  ): Promise<OwnedEvent> {
+    return this.eventsService.create(session.user.id, body as EventInput, session.user.isVip);
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() body: EventInputDto,
+    @Session() session: UserSession<typeof auth>,
+  ): Promise<OwnedEvent> {
+    const event = await this.eventsService.update(
+      id,
+      session.user.id,
+      body as EventInput,
+      session.user.isVip,
+    );
+    if (event) return event;
+
+    const ownerId = await this.eventsService.findOwnerId(id);
+    if (ownerId === undefined) throw new NotFoundException();
+    throw new ForbiddenException();
+  }
+
+  @Delete(':id')
+  async remove(
+    @Param('id') id: string,
+    @Session() session: UserSession<typeof auth>,
+  ): Promise<void> {
+    const deleted = await this.eventsService.delete(id, session.user.id);
+    if (deleted) return;
+
+    const ownerId = await this.eventsService.findOwnerId(id);
+    if (ownerId === undefined) throw new NotFoundException();
+    throw new ForbiddenException();
   }
 }

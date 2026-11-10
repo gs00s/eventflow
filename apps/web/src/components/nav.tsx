@@ -63,6 +63,7 @@ export function Nav() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem render={<Link to="/profile" />}>Profile</DropdownMenuItem>
+                <DropdownMenuItem render={<Link to="/my-events" />}>My Events</DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
                     await authClient.signOut();

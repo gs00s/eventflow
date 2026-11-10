@@ -4,6 +4,7 @@ import { DbService } from '../db/db.service';
 import { eventSessions, events, layouts, speakers, user } from '../db/schemas';
 import {
   eventFactory,
+  eventFieldsFactory,
   eventSessionFactory,
   layoutFactory,
   speakerFactory,
@@ -124,5 +125,111 @@ describe('EventsRepository (integration)', () => {
     expect(nonVip).toBe(false);
     expect(vip).toBe(true);
     expect(notFound).toBeUndefined();
+  });
+
+  it('returns only events owned by the given owner', async () => {
+    const result = await repository.findByOwner(owner.id);
+
+    expect(result.map((row) => row.id)).toEqual(
+      expect.arrayContaining([event.id, vipEvent.id, searchableEvent.id, searchableVipEvent.id]),
+    );
+  });
+
+  it('returns an empty array for an owner with no events', async () => {
+    const result = await repository.findByOwner('00000000-0000-0000-0000-000000000000');
+
+    expect(result).toEqual([]);
+  });
+
+  it('returns the raw row for an existing event id', async () => {
+    const result = await repository.findRawById(event.id);
+
+    expect(result).toMatchObject({ id: event.id, ownerId: owner.id, title: event.title });
+  });
+
+  it('returns undefined from findRawById for an unknown event id', async () => {
+    const result = await repository.findRawById('00000000-0000-0000-0000-000000000000');
+
+    expect(result).toBeUndefined();
+  });
+
+  it('reports the owner id for an existing event', async () => {
+    const result = await repository.findOwnerId(event.id);
+
+    expect(result).toBe(owner.id);
+  });
+
+  it('returns undefined from findOwnerId for an unknown event id', async () => {
+    const result = await repository.findOwnerId('00000000-0000-0000-0000-000000000000');
+
+    expect(result).toBeUndefined();
+  });
+
+  it('creates an event owned by the given owner', async () => {
+    const fields = eventFieldsFactory.build();
+
+    const created = await repository.create(owner.id, fields);
+
+    expect(created).toMatchObject({ ownerId: owner.id, ...fields });
+  });
+
+  it('updates an existing event owned by the given owner and returns the updated row', async () => {
+    const created = await repository.create(owner.id, eventFieldsFactory.build());
+
+    const updated = await repository.update(
+      created.id,
+      owner.id,
+      eventFieldsFactory.build({ title: 'Updated Title' }),
+    );
+
+    expect(updated).toMatchObject({ id: created.id, title: 'Updated Title' });
+  });
+
+  it('returns undefined updating an unknown event id', async () => {
+    const result = await repository.update(
+      '00000000-0000-0000-0000-000000000000',
+      owner.id,
+      eventFieldsFactory.build(),
+    );
+
+    expect(result).toBeUndefined();
+  });
+
+  it('returns undefined updating an event owned by someone else', async () => {
+    const created = await repository.create(owner.id, eventFieldsFactory.build());
+
+    const result = await repository.update(
+      created.id,
+      '00000000-0000-0000-0000-000000000000',
+      eventFieldsFactory.build(),
+    );
+
+    expect(result).toBeUndefined();
+  });
+
+  it('deletes an existing event owned by the given owner and reports success', async () => {
+    const created = await repository.create(owner.id, eventFieldsFactory.build());
+
+    const deleted = await repository.delete(created.id, owner.id);
+    const found = await repository.findRawById(created.id);
+
+    expect(deleted).toBe(true);
+    expect(found).toBeUndefined();
+  });
+
+  it('reports failure deleting an unknown event id', async () => {
+    const result = await repository.delete('00000000-0000-0000-0000-000000000000', owner.id);
+
+    expect(result).toBe(false);
+  });
+
+  it('reports failure deleting an event owned by someone else', async () => {
+    const created = await repository.create(owner.id, eventFieldsFactory.build());
+
+    const result = await repository.delete(created.id, '00000000-0000-0000-0000-000000000000');
+    const found = await repository.findRawById(created.id);
+
+    expect(result).toBe(false);
+    expect(found).toBeDefined();
   });
 });

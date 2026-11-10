@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { server } from '@/test/mocks/server';
@@ -47,5 +47,19 @@ describe('Nav', () => {
     expect(await screen.findByText('JD')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Register' })).toBeNull();
+  });
+
+  it('shows a My Events link between Profile and Log out for a logged-in user', async () => {
+    server.use(
+      http.get('/api/auth/get-session', () => HttpResponse.json(sessionFor(userFactory.build()))),
+      http.get('/api/events', () => HttpResponse.json([])),
+    );
+    await renderApp('/');
+    await screen.findByRole('link', { name: 'Home' });
+
+    fireEvent.click(await screen.findByText('JD'));
+
+    const items = await screen.findAllByRole('menuitem');
+    expect(items.map((item) => item.textContent)).toEqual(['Profile', 'My Events', 'Log out']);
   });
 });
